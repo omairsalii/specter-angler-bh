@@ -91,7 +91,14 @@ ol.steps li{margin-bottom:6px}
 .sub button{white-space:nowrap}
 .banner{background:#3a2a10;border:1px solid #7a5a20;color:#ffe2b0;border-radius:10px;padding:10px;font-size:13px;margin-bottom:10px}
 .banner.red{background:#3a1414;border-color:#7a2a2a;color:#ffd0d0}
-.term{border-bottom:1px dotted var(--acc);cursor:help}
+.term{border-bottom:2px dotted var(--acc);cursor:pointer;color:inherit}
+#termTip{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:2500;background:#0e3a35;border:1px solid var(--acc);border-radius:14px;padding:12px 14px;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#termTip.on{display:block}#termTip b{color:var(--acc2);display:block;margin-bottom:4px}#termTip small{display:block;color:var(--mute);margin-top:6px;font-size:11px}
+#tour{position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.55);display:none}
+#tour .tcard{position:absolute;left:14px;right:14px;bottom:calc(96px + env(safe-area-inset-bottom));background:var(--bg2);border:1px solid var(--acc);border-radius:16px;padding:16px}
+#tour h2{margin:4px 0 6px;font-size:18px}
+nav.tabs button.pulse{color:#fff;background:rgba(46,196,182,.25);border-radius:12px;animation:pl 1.2s infinite}
+@keyframes pl{50%{background:rgba(46,196,182,.5)}}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;align-items:flex-end;justify-content:center}
 .modal.on{display:flex}
 .modal .sheet{background:var(--bg2);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
@@ -121,7 +128,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.7</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.8</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -268,7 +275,8 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
-    <p class="mute">الإصدار 1.7 — Specter Angler BH</p>
+    <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
+    <p class="mute">الإصدار 1.8 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -287,7 +295,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="visuals.js?v=1.7"></script>
+<script src="visuals.js?v=1.8"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -1322,5 +1330,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; reloaded=true; location.reload(); });
 }
 </script>
+<script src="beginner.js?v=1.8"></script>
 </body>
 </html>
