@@ -71,8 +71,12 @@ ol.steps li{margin-bottom:6px}
 .fish{display:flex;gap:12px;align-items:center;cursor:pointer}
 .fish svg{width:120px;height:62px;flex:none;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:10px}
 .lure{display:flex;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0}
-.lureimg{width:150px;flex:none;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:10px}
-.lureimg svg{width:100%;height:auto;display:block}
+.lureimg{width:150px;flex:none}
+.lph{position:relative;width:150px;height:100px;background:#e9edf0;border-radius:10px;overflow:hidden}
+.lph img{width:100%;height:100%;object-fit:contain;display:block}
+.lph .fallback{display:none;width:100%;height:100%;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
+.lph.err{background:none}.lph.err img{display:none}.lph.err .fallback{display:block}
+.lcred{font-size:9px;color:var(--mute);margin-top:3px;line-height:1.4}
 .kstep{width:100%;height:auto;background:#0b1f33;border-radius:10px;display:block}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
@@ -117,7 +121,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.6</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.7</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -264,7 +268,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
-    <p class="mute">الإصدار 1.6 — Specter Angler BH</p>
+    <p class="mute">الإصدار 1.7 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -283,7 +287,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="visuals.js?v=1.6"></script>
+<script src="visuals.js?v=1.7"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -1219,12 +1223,12 @@ document.addEventListener("change", async e=>{
     const url = await resizeToDataURL(inp.files[0]);
     MYPHOTOS[inp.dataset.addphoto] = url;
     if(!store.set("fishphotos", MYPHOTOS)){ delete MYPHOTOS[inp.dataset.addphoto]; toast("مساحة التخزين ممتلئة"); return; }
-    closeModal(); renderFish(); toast("أُضيفت صورتك، وحُذفت منها بيانات الموقع تلقائياً");
+    closeModal(); renderFish(); renderLearn(); if($("#rigOut").innerHTML.trim()) $("#btnRig").click(); toast("أُضيفت صورتك، وحُذفت منها بيانات الموقع تلقائياً");
   }catch(err){ toast("تعذّر قراءة الصورة"); }
 });
 document.addEventListener("click", e=>{
   const a = e.target.closest("[data-rmphoto]"); if(!a) return; e.preventDefault();
-  delete MYPHOTOS[a.dataset.rmphoto]; store.set("fishphotos", MYPHOTOS); closeModal(); renderFish();
+  delete MYPHOTOS[a.dataset.rmphoto]; store.set("fishphotos", MYPHOTOS); closeModal(); renderFish(); renderLearn(); if($("#rigOut").innerHTML.trim()) $("#btnRig").click();
 });
 
 /* =========================================================

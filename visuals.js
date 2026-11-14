@@ -74,12 +74,40 @@ const LURES = {
 const ytSearch = q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
 let _uid = 0;
 const uniq = svg => { const u = "_" + (++_uid); return svg.replace(/id="([a-z0-9]+)"/g, 'id="$1' + u + '"').replace(/url\(#([a-z0-9]+)\)/g, 'url(#$1' + u + ')'); };
+
+/* Real lure photos — Wikimedia Commons (free licences; credit shown under each photo) */
+const LURE_PHOTOS = {
+  popper:      {file: "GT Poppers - Fishing Lures by Robert Stone.jpg", by: "", lic: ""},
+  stickbait:   {file: "Zaraspook.jpg", by: "", lic: ""},
+  float_minnow:{file: "Wobbler 2008 G1.jpg", by: "George Chernilevsky", lic: "ملكية عامة"},
+  sink_minnow: {file: "Rapala fishing lure.jpg", by: "Ankara", lic: "CC BY-SA 3.0"},
+  jig:         {file: "Pilker 1.JPG", by: "Gordito1869", lic: "CC BY 3.0"},
+  paddle:      {file: "Bluefox Vibrotail jig fishing lure 29 gr.jpg", by: "", lic: "CC BY 4.0"},
+  spoon:       {file: "Spoon-bait 2008 G1.jpg", by: "George Chernilevsky", lic: "ملكية عامة"}
+};
+const _cImg = (f, w) => "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(f.replace(/ /g, "_")) + "?width=" + w;
+const _cPage = f => "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(f.replace(/ /g, "_"));
+function lureMedia(key) {
+  const mine = (typeof MYPHOTOS !== "undefined") && MYPHOTOS["lure_" + key];
+  const svg = uniq(LURE_SVG[key]).replace("<svg ", '<svg class="fallback" ');
+  if (mine) return `<div class="lph"><img src="${mine}" alt=""></div>`;
+  const ph = LURE_PHOTOS[key];
+  if (ph) return `<div class="lph"><img src="${_cImg(ph.file, 400)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('err')">${svg}</div>`;
+  return `<div class="lph err">${svg}</div>`;
+}
+function lureCredit(key) {
+  if ((typeof MYPHOTOS !== "undefined") && MYPHOTOS["lure_" + key]) return `صورتك الخاصة · <a href="#" data-rmphoto="lure_${key}" style="color:var(--acc)">إعادة الصورة الأصلية</a>`;
+  const ph = LURE_PHOTOS[key];
+  if (!ph) return "رسم توضيحي — أضف صورة طعمك";
+  return `صورة: ${ph.by ? ph.by + " · " : ""}${ph.lic ? ph.lic + " · " : ""}<a href="${_cPage(ph.file)}" target="_blank" rel="noopener" style="color:var(--acc)">Wikimedia Commons</a>`;
+}
 function lureCard(key, compact) {
   const L = LURES[key];
-  return `<div class="lure"><div class="lureimg">${uniq(LURE_SVG[key])}</div>
+  return `<div class="lure"><div class="lureimg">${lureMedia(key)}<div class="lcred">${lureCredit(key)}</div></div>
     <div style="flex:1"><div style="font-weight:700">${L.name}</div>
     ${compact ? "" : `<div class="mute">${L.desc}</div>`}
-    <a href="${ytSearch(L.q)}" target="_blank" rel="noopener" style="color:var(--acc);font-size:13px">▶ شاهد أمثلة وطريقة الاستعمال</a></div></div>`;
+    <a href="${ytSearch(L.q)}" target="_blank" rel="noopener" style="color:var(--acc);font-size:13px">▶ شاهد أمثلة وطريقة الاستعمال</a><br>
+    <label style="color:var(--acc);font-size:13px;cursor:pointer">📷 أضف صورة طعمك<input type="file" accept="image/*" data-addphoto="lure_${key}" style="display:none"></label></div></div>`;
 }
 
 /* ======================= KNOT DIAGRAMS ======================= */
