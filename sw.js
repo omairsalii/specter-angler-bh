@@ -1,5 +1,5 @@
 /* Specter Angler BH — offline support */
-const VER = "sab-v1.5";
+const VER = "sab-v1.6";
 const SHELL = ["./", "./index.html", "./visuals.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VER).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -13,10 +13,11 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   // Live data: always network (never serve stale sea conditions)
   if (/open-meteo\.com|overpass-api\.de/.test(url.hostname)) return;
-  // App page: network first, fall back to cache when offline
-  if (req.mode === "navigate" || url.pathname.endsWith("/index.html")) {
-    e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(VER).then(x => x.put("./index.html", c)); return r; })
-      .catch(() => caches.match("./index.html")));
+  // App's own files (page, scripts): always fetch the newest copy, bypassing the phone's HTTP cache;
+  // fall back to the saved copy only when offline
+  if (url.origin === location.origin && (req.mode === "navigate" || /\.(html|js|webmanifest)$/.test(url.pathname) || url.pathname.endsWith("/"))) {
+    e.respondWith(fetch(req, {cache: "no-store"}).then(r => { const c = r.clone(); caches.open(VER).then(x => x.put(req.mode === "navigate" ? "./index.html" : req, c)); return r; })
+      .catch(() => caches.match(req.mode === "navigate" ? "./index.html" : req)));
     return;
   }
   // Libraries, fonts, fish photos, map tiles: cache first, then network
