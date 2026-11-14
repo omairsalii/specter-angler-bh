@@ -70,6 +70,12 @@ ol.steps{padding-inline-start:20px;margin:6px 0}
 ol.steps li{margin-bottom:6px}
 .fish{display:flex;gap:12px;align-items:center;cursor:pointer}
 .fish svg{width:120px;height:62px;flex:none;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:10px}
+.lure{display:flex;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0}
+.lureimg{width:150px;flex:none;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:10px}
+.lureimg svg{width:100%;height:auto;display:block}
+.kstep{width:100%;height:auto;background:#0b1f33;border-radius:10px;display:block}
+.kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
+.kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
 .ph.big{width:100%;height:auto;aspect-ratio:16/10}
 .ph img{width:100%;height:100%;object-fit:cover;display:block}
@@ -213,7 +219,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <!-- ============ KNOTS + LESSONS ============ -->
 <section class="view" id="v-learn">
   <div class="sub seg" id="learnTabs">
-    <button data-v="knots" class="on">العُقد</button><button data-v="lessons">الدروس</button><button data-v="glossary">المصطلحات</button>
+    <button data-v="knots" class="on">العُقد</button><button data-v="lures">الطُّعوم</button><button data-v="lessons">الدروس</button><button data-v="glossary">المصطلحات</button>
   </div>
   <div id="tipCard"></div>
   <div id="learnOut"></div>
@@ -258,7 +264,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
-    <p class="mute">الإصدار 1.4 — Specter Angler BH</p>
+    <p class="mute">الإصدار 1.5 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -277,6 +283,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="visuals.js"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -738,27 +745,27 @@ function recommend(c){
   const out = { lure:"", why:[], color:"", weight:"", retrieve:"", main:"", leader:"", knots:[] , alt:"" };
   // Lure type
   if(c.light==="night"){
-    out.lure = "منو عائم أو سوفت بيت داكن";
+    out.lure = "منو عائم أو سوفت بيت داكن"; out.keys=["float_minnow","paddle"];
     out.why.push("في الليل يرى المفترس ظلّ الطعم على السطح، فالشكل الداكن أوضح له");
   } else if(c.light==="low" && c.wind<20 && c.wave<0.8 && c.depth!=="deep"){
-    out.lure = "طعم سطحي (بوبر أو ستكبيت)";
-    out.alt = "إن لم تأتِ ضربات خلال 20 دقيقة، انتقل إلى منو غاطس";
+    out.lure = "طعم سطحي (بوبر أو ستكبيت)"; out.keys=["popper","stickbait"];
+    out.alt = "إن لم تأتِ ضربات خلال 20 دقيقة، انتقل إلى منو غاطس"; out.altKeys=["sink_minnow"];
     out.why.push("في الضوء الخافت يطارد المفترس صغار السمك عند السطح، والضربة السطحية أمتع ما في الصيد");
   } else if(c.wind>20 || c.depth==="deep"){
-    out.lure = "جك معدني للرمي";
-    out.alt = "سوفت بيت ثقيل الرأس للقاع";
+    out.lure = "جك معدني للرمي"; out.keys=["jig"];
+    out.alt = "سوفت بيت ثقيل الرأس للقاع"; out.altKeys=["paddle"];
     out.why.push(c.wind>20 ? "الجك ثقيل ونحيف فيشقّ الريح ويصل بعيداً" : "الجك يغوص بسرعة إلى العمق حيث يقف السمك");
   } else if(c.bottom==="grass" || (c.bottom==="rocks" && c.depth==="shallow")){
-    out.lure = "سوفت بيت بكلّاب مخفي (Weedless)";
-    out.alt = "منو عائم يُسحب فوق الصخور";
+    out.lure = "سوفت بيت بكلّاب مخفي (Weedless)"; out.keys=["weedless"];
+    out.alt = "منو عائم يُسحب فوق الصخور"; out.altKeys=["float_minnow"];
     out.why.push("الكلّاب المخفي لا يعلق في الأعشاب والصخور، فتقلّ خسارة الطُّعوم");
   } else if(c.light==="day" && c.clarity==="clear"){
-    out.lure = "سوفت بيت بذيل متحرّك (Paddle tail) على رأس رصاص";
-    out.alt = "منو غاطس بألوان طبيعية";
+    out.lure = "سوفت بيت بذيل متحرّك (Paddle tail) على رأس رصاص"; out.keys=["paddle"];
+    out.alt = "منو غاطس بألوان طبيعية"; out.altKeys=["sink_minnow"];
     out.why.push("في الماء الصافي والشمس القوية يحتاج السمك طعماً واقعي الحركة");
   } else {
-    out.lure = "منو غاطس (Sinking minnow)";
-    out.alt = "سوفت بيت بذيل متحرّك";
+    out.lure = "منو غاطس (Sinking minnow)"; out.keys=["sink_minnow"];
+    out.alt = "سوفت بيت بذيل متحرّك"; out.altKeys=["paddle"];
     out.why.push("منو غاطس طعم متعدّد الاستعمال يغطي طبقات الماء المتوسطة");
   }
   // Color
@@ -788,15 +795,16 @@ function recommend(c){
 }
 function rigHtml(r, compact){
   const knotLinks = r.knots.map(k=>`<a href="#" data-knot="${k}" style="color:var(--acc)">${KNOTS[k].name}</a>`).join(" + ");
-  return `<div class="rec">
-    <b>الطعم</b><span>${r.lure}</span>
+  const lc = (keys)=> (typeof LURES!=="undefined" && keys) ? keys.map(k=>lureCard(k, compact)).join("") : "";
+  return `<h3 style="margin-top:4px">الطعم المقترح</h3>${lc(r.keys)}
+  ${r.alt?`<div class="mute" style="margin-top:6px">البديل: ${r.alt}</div>${lc(r.altKeys)}`:""}
+  <div class="rec" style="margin-top:10px">
     <b>اللون</b><span>${r.color}</span>
     <b>الوزن</b><span>${r.weight}</span>
     <b>السحب</b><span>${r.retrieve}</span>
     <b>الخيط</b><span>${r.main}</span>
     <b>القائد</b><span>${r.leader}</span>
     <b>العُقد</b><span>${knotLinks}</span>
-    ${r.alt?`<b>البديل</b><span>${r.alt}</span>`:""}
   </div>
   ${!compact || isBeg() ? `<div class="mute" style="margin-top:8px">لماذا؟ ${r.why.join("، ")}.</div>`:""}
   ${isBeg()?`<div class="mute" style="margin-top:6px">إن كنت تستهدف الكنعد أو الباراكودا فأسنانهما تقطع الفلوروكربون؛ استعمل سلكاً معدنياً قصيراً (Wire) قبل الطعم.</div>`:""}`;
@@ -867,20 +875,17 @@ const KNOTS = {
       "بلّل العقدة، واسحب الخيط الرئيسي حتى تنقبض، ثم اقطع الطرف."
     ], tip:"مع القائد الثخين فوق 30 رطلاً تصعب هذه العقدة؛ استعمل Palomar أو العقدة الحلقية." }
 };
-function knotDiagram(k){
-  // simple original schematic: two lines + wraps
-  const wraps = {fg:14, dbluni:8, palomar:3, loop:4, clinch:6}[k]||5;
-  let w = ""; for(let i=0;i<wraps;i++){ const x = 70 + i*(100/wraps); w += `<ellipse cx="${x}" cy="40" rx="${50/wraps+2}" ry="10" fill="none" stroke="#ffb347" stroke-width="2"/>`; }
-  const eye = (k==="palomar"||k==="loop"||k==="clinch") ? `<circle cx="215" cy="40" r="9" fill="none" stroke="#8fa8bf" stroke-width="3"/><path d="M224 40h20" stroke="#8fa8bf" stroke-width="4"/>` : `<path d="M180 40h70" stroke="#2ec4b6" stroke-width="3"/>`;
-  return `<svg viewBox="0 0 260 80" style="width:100%;background:#0b1f33;border-radius:10px;margin:8px 0">
-    <path d="M10 40h170" stroke="${k==="fg"||k==="dbluni"?"#e8f1f8":"#2ec4b6"}" stroke-width="3"/>${w}${eye}
-    <text x="250" y="72" text-anchor="end" fill="#8fa8bf" font-size="10" font-family="Tajawal">رسم تخطيطي</text></svg>`;
-}
 function knotHtml(k){
   const n = KNOTS[k];
+  const steps = (typeof KNOT_STEPS!=="undefined" && KNOT_STEPS[k]) ? KNOT_STEPS[k] : n.steps.map(t=>({t, s:""}));
+  const vids = (typeof KNOT_VIDEOS!=="undefined" && KNOT_VIDEOS[k]) || [];
+  const ref = (typeof KNOT_REF!=="undefined" && KNOT_REF[k]);
   return `<h2>${n.name}</h2><span class="chip">الصعوبة: ${n.level}</span>
-    <p>${n.use}</p>${knotDiagram(k)}
-    <ol class="steps">${n.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+    <p>${n.use}</p>
+    <div class="row">${vids.map(v=>`<a class="btn sm" href="${ytSearch(v[1])}" target="_blank" rel="noopener" style="text-decoration:none">▶ ${v[0]}</a>`).join("")}
+    ${ref?`<a class="btn sm sec" href="${ref[1]}" target="_blank" rel="noopener" style="text-decoration:none">${ref[0]}</a>`:""}</div>
+    <div class="mute" style="margin-top:6px">في الرسوم: <b style="color:#2ec4b6">الأخضر</b> هو الخيط (أو المضفّر)، و<b style="color:#ffb347">البرتقالي</b> طرفه الذي تعمل به، و<b style="color:#e8f1f8">الأبيض</b> القائد، و<b style="color:#9aa8b4">الرمادي</b> الكلّاب، والسهم <b style="color:#ff6b6b">الأحمر</b> يوضّح الحركة.</div>
+    ${steps.map((st,i)=>`<div class="kstepbox"><div style="margin-bottom:8px"><span class="num">${i+1}</span>${st.t}</div>${st.s?kSvg(st.s):""}</div>`).join("")}
     <div class="banner">💡 ${n.tip}</div>
     <div class="mute">قاعدة لكل العقد: بلّل العقدة قبل الشدّ النهائي، فالاحتكاك الجاف يحرق الخيط ويضعفه.</div>`;
 }
@@ -962,6 +967,8 @@ function renderLearn(){
   if(learnTab==="knots"){
     $("#learnOut").innerHTML = (isBeg()?`<div class="banner">ابدأ بعقدتين فقط: <b>Double Uni</b> لوصل المضفّر بالقائد، و<b>Palomar</b> لربط الطعم. تدرّب عليهما في البيت قبل الرحلة.</div>`:"") +
       Object.keys(KNOTS).map(k=>`<div class="card" data-knot="${k}" style="cursor:pointer"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${KNOTS[k].name}</h2><span class="chip">${KNOTS[k].level}</span></div><div class="mute">${KNOTS[k].use}</div></div>`).join("");
+  } else if(learnTab==="lures"){
+    $("#learnOut").innerHTML = `<div class="card"><h2>دليل الطُّعوم الصناعية</h2><div class="mute">اعرف شكل كل طعم ومتى تستعمله. «ماذا أربط؟» يختار لك منها حسب الظروف.</div>${Object.keys(LURES).map(k=>lureCard(k,false)).join("")}</div>`;
   } else if(learnTab==="lessons"){
     $("#learnOut").innerHTML = LESSONS.map(l=>`<div class="card" ${l.danger?'style="border-color:var(--danger)"':""}><h2>${l.t}</h2><ul>${l.b.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("");
   } else {
