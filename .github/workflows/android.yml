@@ -26,7 +26,7 @@ jobs:
       - name: Prepare web files
         run: |
           mkdir -p www
-          cp index.html visuals.js beginner.js manifest.webmanifest www/
+          cp index.html visuals.js gear.js beginner.js manifest.webmanifest www/
           cp -r icons www/
 
       - name: Install Capacitor

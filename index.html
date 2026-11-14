@@ -70,6 +70,8 @@ ol.steps{padding-inline-start:20px;margin:6px 0}
 ol.steps li{margin-bottom:6px}
 .fish{display:flex;gap:12px;align-items:center;cursor:pointer}
 .fish svg{width:120px;height:62px;flex:none;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:10px}
+.gp{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.gpl{color:var(--acc);font-size:12px;white-space:nowrap;text-decoration:none;border:1px solid var(--acc);border-radius:8px;padding:3px 8px}
 .lure{display:flex;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0}
 .lureimg{width:150px;flex:none}
 .lph{position:relative;width:150px;height:100px;background:#e9edf0;border-radius:10px;overflow:hidden}
@@ -128,7 +130,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.0</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.1</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -231,7 +233,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <!-- ============ KNOTS + LESSONS ============ -->
 <section class="view" id="v-learn">
   <div class="sub seg" id="learnTabs">
-    <button data-v="knots" class="on">العُقد</button><button data-v="lures">الطُّعوم</button><button data-v="lessons">الدروس</button><button data-v="glossary">المصطلحات</button>
+    <button data-v="knots" class="on">العُقد</button><button data-v="lures">الطُّعوم</button><button data-v="gear">المعدّات</button><button data-v="acc">الملحقات</button><button data-v="lessons">الدروس</button><button data-v="glossary">المصطلحات</button>
   </div>
   <div id="tipCard"></div>
   <div id="learnOut"></div>
@@ -277,7 +279,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 2.0 — Specter Angler BH</p>
+    <p class="mute">الإصدار 2.1 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -296,7 +298,8 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="visuals.js?v=2.0"></script>
+<script src="visuals.js?v=2.1"></script>
+<script src="gear.js?v=2.1"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -507,7 +510,10 @@ function openNewSpot(latlng){
     $("#nsSave").onclick = ()=>{
       const name = $("#nsName").value.trim() || "نقطتي "+(mySpots.length+1);
       mySpots.push({id:"u"+Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, type:$("#nsType").value, name, mine:true});
-      store.set("myspots", mySpots); closeModal(); renderSpots(); fillLogSpots(); toast("حُفظت النقطة");
+      store.set("myspots", mySpots); renderSpots(); fillLogSpots();
+      const sp = mySpots[mySpots.length-1];
+      $("#modalBody").innerHTML = `<h2>${esc(sp.name)}</h2><div class="mute">حُفظت النقطة · جارٍ تقييمها: تحليل ما حولها وحالة البحر عندها…</div>`;
+      evaluateSpot(sp).then(()=>{ renderSpots(); openSpot(sp); });
     };
 }
 $("#btnLayer").onclick = ()=>{ if(!map) return; if(onSat){ map.removeLayer(sat); osm.addTo(map);} else { map.removeLayer(osm); sat.addTo(map);} onSat=!onSat; };
@@ -609,6 +615,93 @@ async function nearestBest(){
 }
 $("#btnNearest").onclick = nearestBest;
 
+
+/* ---------------- Evaluate a user-added spot ---------------- */
+async function evaluateSpot(sp){
+  const R = 450;
+  const q = `[out:json][timeout:40];
+(
+ way["man_made"~"^(breakwater|groyne|pier)$"](around:${R},${sp.lat},${sp.lng});
+ node["man_made"~"^(breakwater|groyne|pier)$"](around:${R},${sp.lat},${sp.lng});
+ way["natural"="reef"](around:${R},${sp.lat},${sp.lng});
+ node["natural"~"^(reef|cape)$"](around:${R},${sp.lat},${sp.lng});
+);
+out center tags;
+way["natural"="coastline"](around:1500,${sp.lat},${sp.lng});
+out geom;
+(
+ way["landuse"~"^(military|port)$"](around:600,${sp.lat},${sp.lng});
+ way["military"](around:600,${sp.lat},${sp.lng});
+ way["industrial"="port"](around:600,${sp.lat},${sp.lng});
+ way["aeroway"="aerodrome"](around:600,${sp.lat},${sp.lng});
+ way["leisure"="nature_reserve"](around:600,${sp.lat},${sp.lng});
+ way["boundary"="protected_area"](around:600,${sp.lat},${sp.lng});
+);
+out geom tags;`;
+  const ev = {at: Date.now(), feats: [], coastM: null, zone: null, inside: false};
+  try{
+    const js = await fetch("https://overpass-api.de/api/interpreter",{method:"POST", body:"data="+encodeURIComponent(q)}).then(r=>r.json());
+    let best = 1e9;
+    for(const el of js.elements){
+      const t = el.tags||{};
+      if(t.natural==="coastline" && el.geometry){
+        for(const g of el.geometry){ const d = kmBetween(sp,{lat:g.lat,lng:g.lon})*1000; if(d<best) best=d; }
+        continue;
+      }
+      const isZone = t.landuse==="military"||t.landuse==="port"||t.military||t.industrial==="port"||t.aeroway==="aerodrome"||t.leisure==="nature_reserve"||t.boundary==="protected_area";
+      if(isZone){
+        const label = t.landuse==="military"||t.military ? "منطقة عسكرية" : (t.landuse==="port"||t.industrial==="port") ? "ميناء" : t.aeroway ? "مطار" : "محمية";
+        ev.zone = ev.zone || label;
+        if(el.geometry && el.geometry.length>2 && pointInPoly([sp.lat,sp.lng], el.geometry.map(g=>[g.lat,g.lon]))){ ev.zone = label; ev.inside = true; }
+        continue;
+      }
+      const lat = el.lat ?? (el.center&&el.center.lat), lon = el.lon ?? (el.center&&el.center.lon);
+      if(lat==null) continue;
+      const type = t.man_made || t.natural;
+      const mm = Math.round(kmBetween(sp,{lat,lng:lon})*1000); if(mm<=R+50) ev.feats.push({type, m: mm, name: t.name||""});
+    }
+    ev.feats.sort((a,b)=>a.m-b.m);
+    ev.coastM = best<1e9 ? Math.round(best) : null;
+    ev.ok = true;
+  }catch(e){ ev.ok = false; }
+  // nearest scanned candidate
+  if(spots.length){
+    let n=null, d=1e9; spots.forEach(c=>{ const k=kmBetween(sp,c); if(k<d){d=k;n=c;} });
+    if(n) ev.nearest = {name:n.name, km:d, id:n.id};
+  }
+  // infer structure type if the user left it generic
+  if(sp.type==="user" && ev.feats.length && ev.feats[0].m<200) sp.type = ev.feats[0].type;
+  // structure rating 0..100
+  let st = 45;
+  if(ev.feats.length){ const f=ev.feats[0]; st = Math.round((TYPE_W[f.type]||0.7)*100 - Math.min(30, f.m/10)); }
+  if(ev.coastM!=null && ev.coastM>400) st -= 15;
+  ev.structure = clamp(st, 10, 98);
+  sp.eval = ev;
+  store.set("myspots", mySpots);
+  return ev;
+}
+function evalHtml(sp){
+  const ev = sp.eval; if(!ev) return "";
+  if(!ev.ok) return `<div class="banner">تعذّر تحليل محيط النقطة الآن (الخدمة لا تستجيب). <button class="btn sm sec" data-reeval="${sp.id}">إعادة التقييم</button></div>`;
+  const items = [];
+  items.push(ev.feats.length ? `✅ قربها: ${ev.feats.slice(0,3).map(f=>`${TYPE_AR[f.type]||f.type} على بعد ${f.m} م`).join("، ")}` : "➖ لا توجد كاسرات أو أرصفة أو شعاب مسجّلة في الخريطة ضمن 450 م؛ قيّم المكان بعينك (صخور، قناة، عمق قريب).");
+  if(ev.coastM!=null) items.push(ev.coastM<=150 ? `✅ على الساحل مباشرة (${ev.coastM} م من خط الشاطئ)` : ev.coastM<=400 ? `ℹ️ على بعد ${ev.coastM} م من خط الشاطئ المرسوم` : `⚠️ بعيدة ${ev.coastM} م عن خط الشاطئ المرسوم؛ تأكّد أن النقطة على الماء أو على كاسر.`);
+  if(ev.inside) items.push(`⛔ النقطة داخل ${ev.zone} حسب الخريطة؛ غالباً الدخول ممنوع.`);
+  else if(ev.zone) items.push(`⚠️ قريبة من ${ev.zone}؛ تأكّد من أن الوصول مسموح.`);
+  if(ev.nearest) items.push(`📍 أقرب نقطة مرشّحة من المسح: ${esc(ev.nearest.name)} على بعد ${ev.nearest.km<1?Math.round(ev.nearest.km*1000)+" م":ev.nearest.km.toFixed(1)+" كم"}`);
+  return `<h3>تقييم النقطة</h3>
+    <div class="row" style="align-items:center;gap:12px"><div class="dot" style="background:${scoreHex(ev.structure)};width:48px;height:48px;font-size:16px">${ev.structure}</div>
+    <div style="flex:1"><b>جودة الموقع نفسه</b><div class="mute">طبيعة المكان والهياكل حوله، بغضّ النظر عن حالة البحر اليوم.</div></div></div>
+    <ul style="margin-top:8px">${items.map(i=>`<li>${i}</li>`).join("")}</ul>
+    <button class="btn sm sec" data-reeval="${sp.id}">🔄 إعادة التقييم</button>`;
+}
+document.addEventListener("click", async e=>{
+  const b = e.target.closest("[data-reeval]"); if(!b) return;
+  const sp = mySpots.find(x=>x.id===b.dataset.reeval); if(!sp) return;
+  b.disabled = true; b.textContent = "جارٍ التقييم…";
+  await evaluateSpot(sp); renderSpots(); openSpot(sp);
+});
+
 /* --- Overpass scan --- */
 function pointInPoly(pt, poly){ // pt [lat,lng], poly [[lat,lng],...]
   let inside=false;
@@ -686,7 +779,9 @@ $("#btnScan").onclick = scanCoast;
 
 function spotScore(s){
   const base = SCORED.length ? (curScored()?.score ?? 50) : 50;
-  return Math.round(clamp(base * (0.55 + 0.45*(TYPE_W[s.type]||0.7)) + (s.mine?3:0), 0, 100));
+  const w = (s.mine && s.eval && s.eval.ok) ? s.eval.structure/100 : (TYPE_W[s.type]||0.7);
+  if(s.eval && s.eval.inside) return 0;
+  return Math.round(clamp(base * (0.55 + 0.45*w) + (s.mine?3:0), 0, 100));
 }
 function curScored(){
   const now = Date.now();
@@ -726,7 +821,7 @@ async function openSpot(s){
   }catch(e){}
   const cur = (()=>{ let b=null,d=Infinity; sc.forEach(x=>{const dd=Math.abs(x.row.t-Date.now()); if(dd<d){d=dd;b=x;}}); return b; })();
   const bw = bestWindow(sc);
-  const mult = 0.55 + 0.45*(TYPE_W[s.type]||0.7);
+  const mult = 0.55 + 0.45*((s.mine && s.eval && s.eval.ok) ? s.eval.structure/100 : (TYPE_W[s.type]||0.7));
   const nowS = cur ? Math.round(cur.score*mult) : "—";
   const reasons = [];
   if(s.type==="breakwater"||s.type==="groyne") reasons.push("الصخور تجمع صغار السمك وتؤوي المفترس، وأطراف الكاسر أفضل مواضعه");
@@ -742,7 +837,8 @@ async function openSpot(s){
       <div><div class="mute">المؤشر الآن</div><div class="score" style="color:${scoreColor(nowS)}">${nowS}</div></div>
       <div style="text-align:left"><div class="mute">أفضل وقت اليوم</div><div style="font-weight:800;font-size:18px">${bw?fmtH(bw.row.t):"—"}</div></div>
     </div>
-    ${reasons.length?`<h3>لماذا رُشّحت؟</h3><ul>${reasons.map(r=>`<li>${r}</li>`).join("")}</ul>`:""}
+    ${s.mine ? (s.eval ? evalHtml(s) : `<div class="banner">هذه نقطتك ولم تُقيَّم بعد. <button class="btn sm" data-reeval="${s.id}">قيّمها الآن</button></div>`) : ""}
+    ${!s.mine && reasons.length?`<h3>لماذا رُشّحت؟</h3><ul>${reasons.map(r=>`<li>${r}</li>`).join("")}</ul>`:""}
     ${cur?factorChips(cur):""}
     ${rig?`<h3>التجهيزة المقترحة الآن</h3>${rigHtml(rig,true)}`:""}
     <div class="row" style="margin-top:12px">
@@ -851,6 +947,7 @@ function recommend(c){
   out.leader = rocky ? "فلوروكربون 40–50 رطلاً، بطول 1.5–2 متر لمقاومة احتكاك الصخور" : "فلوروكربون 25–30 رطلاً، بطول متر إلى متر ونصف";
   if(c.clarity==="clear" && !rocky) out.leader = "فلوروكربون 20–25 رطلاً (أنحف لأن الماء صافٍ)، بطول متر ونصف";
   out.knots = ["fg", out.lure.includes("جك") ? "palomar" : "loop"];
+  out.ctx = c;
   out.kanad = true;
   return out;
 }
@@ -868,6 +965,7 @@ function rigHtml(r, compact){
     <b>العُقد</b><span>${knotLinks}</span>
   </div>
   ${!compact || isBeg() ? `<div class="mute" style="margin-top:8px">لماذا؟ ${r.why.join("، ")}.</div>`:""}
+  ${typeof gearCheck==="function" ? gearCheck(r, r.ctx) : ""}
   ${isBeg()?`<div class="mute" style="margin-top:6px">إن كنت تستهدف الكنعد أو الباراكودا فأسنانهما تقطع الفلوروكربون؛ استعمل سلكاً معدنياً قصيراً (Wire) قبل الطعم.</div>`:""}`;
 }
 document.addEventListener("click", e=>{
@@ -1028,6 +1126,10 @@ function renderLearn(){
   if(learnTab==="knots"){
     $("#learnOut").innerHTML = (isBeg()?`<div class="banner">ابدأ بعقدتين فقط: <b>Double Uni</b> لوصل المضفّر بالقائد، و<b>Palomar</b> لربط الطعم. تدرّب عليهما في البيت قبل الرحلة.</div>`:"") +
       Object.keys(KNOTS).map(k=>`<div class="card" data-knot="${k}" style="cursor:pointer"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${KNOTS[k].name}</h2><span class="chip">${KNOTS[k].level}</span></div><div class="mute">${KNOTS[k].use}</div></div>`).join("");
+  } else if(learnTab==="acc"){
+    $("#learnOut").innerHTML = accHtml(); bindAcc();
+  } else if(learnTab==="gear"){
+    $("#learnOut").innerHTML = gearHtml(); bindGear();
   } else if(learnTab==="lures"){
     $("#learnOut").innerHTML = `<div class="card"><h2>دليل الطُّعوم الصناعية</h2><div class="mute">اعرف شكل كل طعم ومتى تستعمله. «ماذا أربط؟» يختار لك منها حسب الظروف.</div>${Object.keys(LURES).map(k=>lureCard(k,false)).join("")}</div>`;
   } else if(learnTab==="lessons"){
@@ -1379,6 +1481,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; reloaded=true; location.reload(); });
 }
 </script>
-<script src="beginner.js?v=2.0"></script>
+<script src="beginner.js?v=2.1"></script>
 </body>
 </html>
