@@ -83,6 +83,7 @@ ol.steps li{margin-bottom:6px}
 .close{float:left;background:none;border:0;color:var(--mute);font-size:26px;cursor:pointer;line-height:1}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0e3a35;border:1px solid var(--acc);padding:8px 14px;border-radius:10px;z-index:3000;display:none;font-size:14px}
 .leaflet-container{background:#0b1f33;font-family:Tajawal,sans-serif}
+.leaflet-popup-content .btn{font-size:12px;padding:5px 8px}
 .leaflet-popup-content{font-family:Tajawal,sans-serif;direction:rtl;text-align:right}
 table.t{width:100%;border-collapse:collapse;font-size:14px}
 table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:right}
@@ -119,11 +120,13 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   <div id="netBanner" class="banner" style="display:none"></div>
   <div id="map"></div>
   <div class="row" style="margin-bottom:12px">
+    <button class="btn sm" id="btnLocate">📍 موقعي</button>
     <button class="btn sm" id="btnScan">مسح الساحل عن نقاط مرشّحة</button>
     <button class="btn sm sec" id="btnAdd">+ أضف نقطتي</button>
     <button class="btn sm sec" id="btnLayer">صور فضائية / خريطة</button>
   </div>
 
+  <div id="lastCatch"></div>
   <div class="card" id="nowCard">
     <div class="row" style="justify-content:space-between">
       <div>
@@ -232,6 +235,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </div>
     <label class="f">ملاحظات</label>
     <textarea id="lgNote" rows="2" placeholder="مثلاً: ضربات قرب نهاية الكاسر مع بداية المدّ"></textarea>
+    <label class="row" style="margin-top:10px;gap:10px;cursor:pointer"><span class="switch"><input type="checkbox" id="lgGeo" checked><span></span></span><span>احفظ موقعي الحالي مع الرحلة (إن لم أختر نقطة)</span></label>
     <div class="mute" style="margin-top:6px">تُحفظ ظروف البحر لحظة التسجيل تلقائياً مع الرحلة.</div>
     <div class="row" style="margin-top:10px"><button class="btn" id="btnLog">حفظ</button></div>
   </div>
@@ -249,7 +253,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
-    <p class="mute">الإصدار 1.0 — Specter Angler BH</p>
+    <p class="mute">الإصدار 1.3 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -436,7 +440,7 @@ function bestWindow(scored){
 /* =========================================================
    Map & spots
    ========================================================= */
-let map, sat, osm, onSat = true, spotLayer, addMode = false;
+let map, sat, osm, onSat = true, spotLayer, lastLayer, addMode = false;
 let RECORDS = null;   // conditions rows for Bahrain overall
 let SCORED = [];
 let spots = store.get("spots", []);       // auto candidates
@@ -451,9 +455,15 @@ function initMap(){
   osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"© OpenStreetMap"});
   sat.addTo(map);
   spotLayer = L.layerGroup().addTo(map);
+  lastLayer = L.layerGroup().addTo(map);
   map.on("click", e=>{
     if(!addMode) return;
     addMode = false; $("#btnAdd").textContent = "+ أضف نقطتي";
+    openNewSpot(e.latlng);
+  });
+}
+function openNewSpot(latlng){
+    const e = {latlng};
     openModal(`<h2>نقطة جديدة</h2>
       <label class="f">اسم النقطة</label><input id="nsName" placeholder="مثلاً: كاسر بلاج الجزائر">
       <label class="f">طبيعتها</label>
@@ -464,10 +474,67 @@ function initMap(){
       mySpots.push({id:"u"+Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, type:$("#nsType").value, name, mine:true});
       store.set("myspots", mySpots); closeModal(); renderSpots(); fillLogSpots(); toast("حُفظت النقطة");
     };
-  });
 }
 $("#btnLayer").onclick = ()=>{ if(!map) return; if(onSat){ map.removeLayer(sat); osm.addTo(map);} else { map.removeLayer(osm); sat.addTo(map);} onSat=!onSat; };
 $("#btnAdd").onclick = ()=>{ addMode = !addMode; $("#btnAdd").textContent = addMode ? "اضغط على الخريطة…" : "+ أضف نقطتي"; if(addMode) toast("اضغط على موقع النقطة في الخريطة"); };
+
+
+/* ---------------- Location & navigation ---------------- */
+const navUrl = (lat,lng) => `https://www.google.com/maps/dir/?api=1&destination=${(+lat).toFixed(6)},${(+lng).toFixed(6)}&travelmode=driving&dir_action=navigate`;
+const navBtn = (lat,lng,label="الذهاب عبر خرائط قوقل") => `<a class="btn sm" href="${navUrl(lat,lng)}" target="_blank" rel="noopener" style="text-decoration:none">🧭 ${label}</a>`;
+let meMarker = null, meCircle = null, lastMe = null;
+function getPosition(timeout=15000){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation) return rej(new Error("unsupported"));
+    navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy}), rej, {enableHighAccuracy:true, timeout, maximumAge:30000});
+  });
+}
+function geoErrMsg(e){
+  if(e && e.code===1) return "رُفض إذن الموقع. فعّله من إعدادات المتصفح لهذا الموقع ثم حاول مجدداً";
+  if(e && e.code===3) return "تأخّر تحديد الموقع، تأكد من تشغيل GPS وحاول مجدداً";
+  return "تعذّر تحديد موقعك";
+}
+async function locateMe(){
+  const b = $("#btnLocate"); b.disabled = true; b.textContent = "جارٍ تحديد موقعك…";
+  try{
+    const me = await getPosition(); lastMe = me;
+    if(map){
+      if(meMarker){ map.removeLayer(meMarker); map.removeLayer(meCircle); }
+      meCircle = L.circle([me.lat,me.lng],{radius:Math.min(me.acc,300), color:"#4da3ff", weight:1, fillOpacity:.12}).addTo(map);
+      meMarker = L.circleMarker([me.lat,me.lng],{radius:8, color:"#fff", weight:3, fillColor:"#2f80ff", fillOpacity:1}).addTo(map);
+      meMarker.bindPopup(`<b>أنت هنا</b><br><span style="font-size:12px">الدقة ±${Math.round(me.acc)} م</span><br>
+        <button class="btn sm" data-act="saveHere" style="margin-top:6px">⭐ احفظ كنقطة صيد</button>
+        <button class="btn sm sec" data-act="logHere" style="margin-top:6px">🎣 سجّل صيداً هنا</button>`).openPopup();
+      map.setView([me.lat,me.lng], 15);
+    }
+  }catch(e){ toast(geoErrMsg(e)); }
+  b.disabled = false; b.textContent = "📍 موقعي";
+}
+$("#btnLocate").onclick = locateMe;
+document.addEventListener("click", e=>{
+  const a = e.target.closest("[data-act]"); if(!a) return;
+  if(a.dataset.act==="saveHere" && lastMe){ openNewSpot({lat:lastMe.lat, lng:lastMe.lng}); }
+  if(a.dataset.act==="logHere"){ $$("#tabs button").find(x=>x.dataset.v==="log").click(); $("#lgGeo").checked = true; $("#lgSpot").value=""; toast("سيُحفظ موقعك الحالي مع الرحلة"); }
+  if(a.dataset.act==="showOnMap"){ const lat=+a.dataset.lat, lng=+a.dataset.lng; $$("#tabs button").find(x=>x.dataset.v==="map").click(); if(map) setTimeout(()=>{ map.setView([lat,lng],16); },120); }
+});
+function renderLastCatch(){
+  const withPos = LOG.filter(e=>e.lat!=null);
+  const last = withPos.find(e=>e.count>0) || withPos[0];
+  const el = $("#lastCatch"); if(!el) return;
+  if(lastLayer){ lastLayer.clearLayers(); }
+  if(!last){ el.innerHTML=""; return; }
+  const f = FISH.find(x=>x.id===last.fish);
+  el.innerHTML = `<div class="card" style="border-color:var(--acc2)">
+    <div class="mute">${last.count>0?"آخر مكان صدت فيه":"آخر رحلة مسجّلة"}</div>
+    <div style="font-weight:700">${last.spot?esc(last.spot)+" — ":""}${new Date(last.t).toLocaleDateString("ar-BH-u-nu-latn")} ${fmtH(new Date(last.t))}${last.count>0?` · ${last.count} ${f?fname(f):"سمكة"}`:""}</div>
+    <div class="row" style="margin-top:8px">${navBtn(last.lat,last.lng)}<button class="btn sm sec" data-act="showOnMap" data-lat="${last.lat}" data-lng="${last.lng}">عرض على الخريطة</button></div></div>`;
+  if(lastLayer){
+    withPos.slice(0,30).forEach(e=>{
+      L.marker([e.lat,e.lng],{icon:L.divIcon({className:"", html:`<div style="font-size:20px;line-height:20px">${e.count>0?"🎣":"•"}</div>`, iconSize:[20,20], iconAnchor:[10,10]})})
+        .addTo(lastLayer).bindPopup(`<b>${e.spot?esc(e.spot):"رحلة"}</b><br>${new Date(e.t).toLocaleDateString("ar-BH-u-nu-latn")} · ${e.count} سمكة<br>${e.lure} · ${e.color}<br><a href="${navUrl(e.lat,e.lng)}" target="_blank" rel="noopener">🧭 الذهاب عبر خرائط قوقل</a>`);
+    });
+  }
+}
 
 /* --- Overpass scan --- */
 function pointInPoly(pt, poly){ // pt [lat,lng], poly [[lat,lng],...]
@@ -606,7 +673,8 @@ async function openSpot(s){
     ${cur?factorChips(cur):""}
     ${rig?`<h3>التجهيزة المقترحة الآن</h3>${rigHtml(rig,true)}`:""}
     <div class="row" style="margin-top:12px">
-      <a class="btn sec sm" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener" style="text-decoration:none">الاتجاهات</a>
+      ${navBtn(s.lat,s.lng)}
+      <button class="btn sec sm" data-renamespot="${s.id}">✏️ تعديل الاسم</button>
       ${s.mine?`<button class="btn sec sm" id="delSpot">حذف النقطة</button>`:""}
     </div>`;
   const d = $("#delSpot"); if(d) d.onclick = ()=>{ mySpots = mySpots.filter(x=>x.id!==s.id); store.set("myspots",mySpots); closeModal(); renderSpots(); fillLogSpots(); };
@@ -1052,8 +1120,8 @@ function fishMedia(f, big){
   const mine = MYPHOTOS[f.id];
   const ph = PHOTOS[f.id];
   const svg = fishSVG(f.draw).replace("<svg ", '<svg class="fallback" ');
-  if(mine) return `<div class="ph${big?" big":""}"><img src="${mine}" alt="${f.ar}"></div>`;
-  if(ph) return `<div class="ph${big?" big":""}"><img src="${commonsImg(ph.file, big?800:320)}" alt="${f.ar}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('err')">${svg}</div>`;
+  if(mine) return `<div class="ph${big?" big":""}"><img src="${mine}" alt="${fname(f)}"></div>`;
+  if(ph) return `<div class="ph${big?" big":""}"><img src="${commonsImg(ph.file, big?800:320)}" alt="${fname(f)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('err')">${svg}</div>`;
   return `<div class="ph${big?" big":""} err">${svg}</div>`;
 }
 function photoCredit(f){
@@ -1070,6 +1138,29 @@ async function resizeToDataURL(file, max=900){
   return c.toDataURL("image/jpeg", 0.8); // re-encoding drops EXIF incl. GPS location
 }
 
+
+let FISH_NAMES = store.get("fishnames", {});
+const fname = f => FISH_NAMES[f.id] || f.ar;
+function openRenameFish(id){
+  const f = FISH.find(x=>x.id===id);
+  openModal(`<h2>تعديل اسم السمكة</h2>
+    <div class="mute">الاسم الأصلي: ${f.ar} — ${f.en}</div>
+    <label class="f">الاسم الذي تريده</label><input id="rnName" value="${esc(fname(f))}">
+    <div class="row" style="margin-top:12px"><button class="btn" id="rnSave">حفظ</button>${FISH_NAMES[id]?'<button class="btn sec" id="rnReset">إعادة الاسم الأصلي</button>':""}</div>`);
+  $("#rnSave").onclick = ()=>{ const v=$("#rnName").value.trim(); if(v && v!==f.ar) FISH_NAMES[id]=v; else delete FISH_NAMES[id]; store.set("fishnames",FISH_NAMES); closeModal(); renderFish(); fillLogFish(); renderLog(); renderLastCatch(); toast("حُفظ الاسم"); };
+  const r=$("#rnReset"); if(r) r.onclick = ()=>{ delete FISH_NAMES[id]; store.set("fishnames",FISH_NAMES); closeModal(); renderFish(); fillLogFish(); renderLog(); renderLastCatch(); toast("أُعيد الاسم الأصلي"); };
+}
+function openRenameSpot(id){
+  const s = mySpots.find(x=>x.id===id) || spots.find(x=>x.id===id);
+  openModal(`<h2>تعديل اسم النقطة</h2><label class="f">الاسم</label><input id="rsName" value="${esc(s.name)}">
+    <div class="row" style="margin-top:12px"><button class="btn" id="rsSave">حفظ</button></div>`);
+  $("#rsSave").onclick = ()=>{ const v=$("#rsName").value.trim(); if(!v) return; s.name=v; store.set("myspots",mySpots); store.set("spots",spots); closeModal(); renderSpots(); fillLogSpots(); toast("حُفظ الاسم"); };
+}
+document.addEventListener("click", e=>{
+  const a = e.target.closest("[data-renamefish]"); if(a){ e.preventDefault(); openRenameFish(a.dataset.renamefish); return; }
+  const b = e.target.closest("[data-renamespot]"); if(b){ e.preventDefault(); openRenameSpot(b.dataset.renamespot); }
+});
+
 function banActive(f, date=new Date()){
   if(!f.ban) return false;
   const m = date.getMonth()+1, d = date.getDate();
@@ -1081,13 +1172,13 @@ $$("#fishFilter button").forEach(b=>b.onclick=()=>{ $$("#fishFilter button").for
 function renderFish(){
   const active = FISH.filter(f=>banActive(f));
   $("#banNow").style.display = active.length ? "block" : "none";
-  $("#banNow").innerHTML = active.length ? "منع موسمي ساري الآن: " + active.map(f=>`<b>${f.ar}</b>`).join("، ") + ". أطلقها فوراً إن اصطدتها." : "";
+  $("#banNow").innerHTML = active.length ? "منع موسمي ساري الآن: " + active.map(f=>`<b>${fname(f)}</b>`).join("، ") + ". أطلقها فوراً إن اصطدتها." : "";
   const list = FISH.filter(f=>fishFilter==="all" || f.tags.includes(fishFilter));
   $("#fishList").innerHTML = list.map(f=>`
     <div class="card fish" data-f="${f.id}">
       ${fishMedia(f,false)}
       <div style="flex:1">
-        <div style="font-weight:800;font-size:17px">${f.ar}</div>
+        <div style="font-weight:800;font-size:17px">${fname(f)}</div>
         <div class="mute">${f.en}</div>
         <div>${f.tags.includes("danger")?'<span class="chip warn">سامّة / خطرة</span>':""}${f.tags.includes("lure")?'<span class="chip ok">تضرب الطعم</span>':""}${banActive(f)?'<span class="chip warn">ممنوعة الآن</span>':""}</div>
       </div>
@@ -1097,7 +1188,8 @@ function renderFish(){
     openModal(`${fishMedia(f,true)}
       ${photoCredit(f)}
       <label class="btn sec sm" style="display:inline-block;margin-top:8px;cursor:pointer">📷 أضف صورتك لهذا النوع<input type="file" accept="image/*" data-addphoto="${f.id}" style="display:none"></label>
-      <h2 style="margin-top:8px">${f.ar} <span class="mute" style="font-size:13px">— ${f.en}</span></h2>
+      <h2 style="margin-top:8px">${fname(f)} <span class="mute" style="font-size:13px">— ${f.en}</span> <a href="#" data-renamefish="${f.id}" style="font-size:14px;color:var(--acc);text-decoration:none">✏️ تعديل الاسم</a></h2>
+      ${FISH_NAMES[f.id]?`<div class="mute">الاسم الأصلي في الدليل: ${f.ar}</div>`:""}
       <div class="mute" style="font-style:italic">${f.sci}</div>
       <h3>كيف تميّزها؟</h3><p>${f.id_}</p>
       <h3>أين تجدها؟</h3><p>${f.where}</p>
@@ -1132,21 +1224,27 @@ function fillLogSpots(){
   $("#lgSpot").innerHTML = `<option value="">— بدون نقطة محددة —</option>` + all.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
 }
 function fillLogFish(){
-  $("#lgFish").innerHTML = `<option value="">لا شيء</option>` + FISH.filter(f=>f.id!=="seasnake").map(f=>`<option value="${f.id}">${f.ar}</option>`).join("") + `<option value="other">نوع آخر</option>`;
+  $("#lgFish").innerHTML = `<option value="">لا شيء</option>` + FISH.filter(f=>f.id!=="seasnake").map(f=>`<option value="${f.id}">${fname(f)}</option>`).join("") + `<option value="other">نوع آخر</option>`;
 }
 function nowLocalInput(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
 $("#lgTime").value = nowLocalInput();
-$("#btnLog").onclick = ()=>{
+$("#btnLog").onclick = async ()=>{
   const sid = $("#lgSpot").value, all=[...mySpots,...spots], sp = all.find(s=>s.id===sid);
+  let pos = sp ? {lat:sp.lat, lng:sp.lng} : null;
+  if(!pos && $("#lgGeo").checked){
+    const b=$("#btnLog"); b.disabled=true; b.textContent="جارٍ تحديد موقعك…";
+    try{ pos = await getPosition(12000); }catch(e){ toast(geoErrMsg(e)+"؛ حُفظت الرحلة بلا موقع"); }
+    b.disabled=false; b.textContent="حفظ";
+  }
   const t = new Date($("#lgTime").value || Date.now());
   let cond = null; let best=null,dd=Infinity;
   SCORED.forEach(x=>{ const d=Math.abs(x.row.t-t); if(d<dd){dd=d;best=x;} });
   if(best && dd<3*36e5) cond = {score:best.score, tide:best.row.tideState, wind:best.row.wind, wave:best.row.wave, sst:best.row.sst, light:best.row.lightK, moon:moonName(best.moon)};
   const fishId = $("#lgFish").value;
-  if(fishId){ const f = FISH.find(x=>x.id===fishId); if(f && banActive(f,t)) toast("تنبيه: "+f.ar+" ممنوع صيده في هذه الفترة، أطلقه"); }
-  LOG.unshift({ id:Date.now(), t:t.toISOString(), spot: sp?sp.name:"", spotId:sid, lure:$("#lgLure").value, color:$("#lgColor").value, fish:fishId, count:+$("#lgCount").value||0, note:$("#lgNote").value.trim(), cond });
+  if(fishId){ const f = FISH.find(x=>x.id===fishId); if(f && banActive(f,t)) toast("تنبيه: "+fname(f)+" ممنوع صيده في هذه الفترة، أطلقه"); }
+  LOG.unshift({ id:Date.now(), t:t.toISOString(), spot: sp?sp.name:"", spotId:sid, lure:$("#lgLure").value, color:$("#lgColor").value, fish:fishId, count:+$("#lgCount").value||0, note:$("#lgNote").value.trim(), cond, lat: pos?pos.lat:null, lng: pos?pos.lng:null });
   store.set("log", LOG); $("#lgNote").value=""; $("#lgCount").value=0; $("#lgTime").value = nowLocalInput();
-  renderLog(); toast("حُفظت الرحلة");
+  renderLog(); renderLastCatch(); toast("حُفظت الرحلة"+(pos?" مع موقعها":""));
 };
 function renderLog(){
   $("#logList").innerHTML = LOG.length ? LOG.slice(0,50).map(e=>{
@@ -1154,11 +1252,11 @@ function renderLog(){
     return `<div class="spot" style="cursor:default">
       <div class="dot" style="background:${e.count>0?"var(--good)":"#4a5d70"}">${e.count}</div>
       <div style="flex:1"><div style="font-weight:700">${e.spot?esc(e.spot):"رحلة"} — ${new Date(e.t).toLocaleDateString("ar-BH-u-nu-latn")} ${fmtH(new Date(e.t))}</div>
-      <div class="mute">${e.lure} · ${e.color}${f?" · "+f.ar:""}${e.cond?` · ${e.cond.tide||""}`:""}</div>
+      <div class="mute">${e.lure} · ${e.color}${f?" · "+fname(f):""}${e.cond?` · ${e.cond.tide||""}`:""}</div>
       ${e.note?`<div class="mute">${esc(e.note)}</div>`:""}</div>
-      <button class="btn sec sm" data-del="${e.id}">حذف</button></div>`;
+      <div style="display:flex;flex-direction:column;gap:6px">${e.lat!=null?`<a class="btn sm" href="${navUrl(e.lat,e.lng)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">🧭</a>`:""}<button class="btn sec sm" data-del="${e.id}">حذف</button></div></div>`;
   }).join("") : `<div class="mute">لا رحلات بعد.</div>`;
-  $$("[data-del]").forEach(b=>b.onclick=()=>{ LOG = LOG.filter(x=>x.id!=+b.dataset.del); store.set("log",LOG); renderLog(); });
+  $$("[data-del]").forEach(b=>b.onclick=()=>{ LOG = LOG.filter(x=>x.id!=+b.dataset.del); store.set("log",LOG); renderLog(); renderLastCatch(); });
   // stats
   if(LOG.length>=3){
     const agg = key => { const m={}; LOG.forEach(e=>{ const k=key(e); if(!k) return; m[k]=m[k]||{trips:0,fish:0}; m[k].trips++; m[k].fish+=e.count; }); return Object.entries(m).sort((a,b)=>(b[1].fish/b[1].trips)-(a[1].fish/a[1].trips)); };
@@ -1183,7 +1281,7 @@ $("#btnImport").onclick = ()=>{
 /* =========================================================
    Boot
    ========================================================= */
-function renderAll(){ renderNow(); renderSpots(); renderLearn(); renderFish(); renderLog(); }
+function renderAll(){ renderNow(); renderSpots(); renderLearn(); renderFish(); renderLog(); renderLastCatch(); }
 async function loadConditions(){
   try{
     const rows = await fetchConditions(BH_CENTER[0], BH_CENTER[1]);
