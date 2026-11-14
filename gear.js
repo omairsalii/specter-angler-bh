@@ -81,6 +81,31 @@ const GEAR_SETUPS = [
    lures: "جكّات 30–60 غ، بوبر كبير، منو طويل", eg: "مثال قصبة: Major Craft Crostage CRX-962LSJ (30–50 غ) أو Crosride 3G XR3-1002M (حتى 80 غ)"}
 ];
 
+
+const REEL_SIZES = [
+  ["2500", "خفيف جداً: سبيطي وفسكر، وطُعوم 3–15 غ", "PE 0.4–0.8", "لا يناسب الكاسرات"],
+  ["3000", "خفيف إلى متوسط: معظم سمك الشاطئ، وطُعوم حتى 25 غ", "PE 0.8–1.2", "بداية جيدة إن كان صيدك قرب الرمل"],
+  ["4000", "⭐ المتوسط: الأنسب لتبدأ به في البحرين، وطُعوم وجكّات حتى 40 غ", "PE 1–1.5", "نقترحه لك كأول بكرة"],
+  ["5000", "متوسط ثقيل: الكاسرات العميقة، والجش والكنعد، وجكّات 30–60 غ", "PE 1.5–2", "حين تريد قوة أكبر من 4000"],
+  ["6000", "ثقيل: جكّات 60–100 غ، وبوبرات كبيرة، وسمك كبير جداً", "PE 2–3", "ثقيلة على الرمي الطويل لساعات من الشاطئ"],
+  ["8000+", "ثقيل جداً: صيد القوارب والجكّات العميقة", "PE 3 فما فوق", "لا تحتاجه للصيد من الشاطئ"]
+];
+const REEL_BRANDS = [
+  ["Shimano (ياباني)", "الأشهر والأكثر انتشاراً في الخليج، نعومة ودقة عالية، وقطع غيارها متوفرة. من الاقتصادي إلى الممتاز: Sedona ← Nasci ← Stradic ← Twin Power/Stella."],
+  ["Daiwa (ياباني)", "منافس شيمانو المباشر، قوي في الإحكام ضد الماء. من الاقتصادي إلى الممتاز: BG ← BG MQ ← Saltist ← Saltiga."],
+  ["Penn (أمريكي)", "متخصص في ماء البحر، أجسامه معدنية ومتينة جداً لكنها أثقل. من الاقتصادي إلى الممتاز: Battle ← Spinfisher ← Slammer."],
+  ["Okuma / KastKing", "خيارات اقتصادية مقبولة للبداية، لكن عمرها أقصر في ماء البحر الحار."]
+];
+function reelSizeHtml() {
+  return `<div class="card"><h2>مقاس البكرة (3000، 4000، 6000…) والماركة</h2>
+    <div class="mute">الرقم يدل على حجم البكرة وقوتها: كلما كبر الرقم كبرت بكرة الخيط، وزادت قوة الفرامل والسعة، وزاد الوزن.</div>
+    <table class="t" style="margin-top:8px"><tr><th>المقاس</th><th>الاستعمال</th><th>المضفّر</th></tr>
+    ${REEL_SIZES.map(r => `<tr><td style="font-weight:800;color:var(--acc2)">${r[0]}</td><td>${r[1]}<div class="mute">${r[3]}</div></td><td style="white-space:nowrap">${r[2]}</td></tr>`).join("")}</table>
+    <div class="banner" style="margin-top:10px">⚠️ الأرقام لا تتطابق تماماً بين الماركات: بكرات Penn أكبر عادةً من مثيلاتها في شيمانو ودايوا بدرجة، فبكرة Penn 3000 تقارب شيمانو 4000. قارن دائماً بقوة الفرامل وسعة الخيط المكتوبتين على العلبة.</div>
+    <h3>الماركات</h3>${REEL_BRANDS.map(b => `<div class="gp"><div><b>${b[0]}</b><div class="mute">${b[1]}</div></div></div>`).join("")}
+    <div class="banner" style="margin-top:10px">🎯 <b>اقتراحنا لأول بكرة:</b> شيمانو أو دايوا مقاس <b>4000</b> بسرعة HG، أو Penn مقاس <b>3000</b>، محكمة ضد ماء البحر.</div></div>`;
+}
+
 const gSearch = q => "https://www.google.com/search?q=" + encodeURIComponent(q);
 
 function gearProductsHtml(cat) {
@@ -117,6 +142,7 @@ function gearHtml() {
       <div class="rec" style="margin-top:8px"><b>القصبة</b><span>${s.rod}</span><b>البكرة</b><span>${s.reel}</span><b>المضفّر</b><span>${s.braid}</span><b>القائد</b><span>${s.leader}</span><b>الطُّعوم</b><span>${s.lures}</span></div>
       <div class="mute" style="margin-top:6px">${s.eg}</div></div>`).join("")}</div>
 
+  ${reelSizeHtml()}
   ${GEAR_BASICS.map(x => `<div class="card"><h2>كيف تختار ${x.t}؟</h2><ul>${x.b.map(i => `<li>${i}</li>`).join("")}</ul>
     ${x.t.startsWith("القصبة") ? gearProductsHtml("rods") : x.t.startsWith("البكرة") ? gearProductsHtml("reels") : x.t.startsWith("قوة البكرة") ? "" : `<h3>المضفّر</h3>${gearProductsHtml("braid")}<h3>القائد</h3>${gearProductsHtml("leader")}`}</div>`).join("")}
 
