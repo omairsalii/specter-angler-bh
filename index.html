@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#0a1626">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Specter Angler">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>Specter Angler BH — الصَّيَّادُ الشَّبَح</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -253,7 +258,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
-    <p class="mute">الإصدار 1.3 — Specter Angler BH</p>
+    <p class="mute">الإصدار 1.4 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -1299,6 +1304,10 @@ fillLogSpots(); fillLogFish();
 renderAll();
 loadConditions();
 setInterval(loadConditions, 30*60*1000);
+// Offline support (website only; the Android app ships its files inside the APK)
+if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capacitor){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
 </script>
 </body>
 </html>
