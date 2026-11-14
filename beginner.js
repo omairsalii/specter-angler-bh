@@ -34,7 +34,7 @@
     T.re = new RegExp(`(^|[^${AR}])((?:[وبلف]?ال|[وبلف])?(?:${alts}))(?=$|[^${AR}])`);
   });
 
-  const SKIP = "a,button,label,input,select,textarea,svg,text,h2,.term,.chip,.seg,nav";
+  const SKIP = "[data-noterm],a,button,label,input,select,textarea,svg,text,h2,.term,.chip,.seg,nav";
   function markIn(root) {
     const used = new Set();
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {

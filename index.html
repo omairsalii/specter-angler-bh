@@ -128,7 +128,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.8</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.9</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -142,6 +142,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   <div id="netBanner" class="banner" style="display:none"></div>
   <div id="map"></div>
   <div class="row" style="margin-bottom:12px">
+    <button class="btn sm" id="btnNearest" style="background:var(--acc2)">🎯 أقرب أفضل المواقع</button>
     <button class="btn sm" id="btnLocate">📍 موقعي</button>
     <button class="btn sm" id="btnScan">مسح الساحل عن نقاط مرشّحة</button>
     <button class="btn sm sec" id="btnAdd">+ أضف نقطتي</button>
@@ -276,7 +277,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 1.8 — Specter Angler BH</p>
+    <p class="mute">الإصدار 1.9 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -295,7 +296,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="visuals.js?v=1.8"></script>
+<script src="visuals.js?v=1.9"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -559,6 +560,44 @@ function renderLastCatch(){
     });
   }
 }
+
+
+/* ---------------- Nearest best spots ---------------- */
+function kmBetween(a, b){
+  const R=6371, dLa=(b.lat-a.lat)*rad, dLo=(b.lng-a.lng)*rad;
+  const x=Math.sin(dLa/2)**2 + Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+async function nearestBest(){
+  const b=$("#btnNearest"); const label=b.textContent; b.disabled=true; b.textContent="جارٍ تحديد موقعك…";
+  let me;
+  try{ me = await getPosition(); lastMe = me; }
+  catch(e){ toast(geoErrMsg(e)); b.disabled=false; b.textContent=label; return; }
+  if(!spots.length){ b.textContent="جارٍ مسح الساحل…"; await scanCoast(); }
+  b.disabled=false; b.textContent=label;
+  const all=[...mySpots, ...spots];
+  if(!all.length){ toast("لا توجد نقاط بعد؛ أضف نقاطك أو أعد مسح الساحل"); return; }
+  const ranked = all.map(s=>{ const km=kmBetween(me,s), sc=spotScore(s); return {...s, km, sc, rank: sc*Math.exp(-km/12)}; })
+    .sort((a,b)=>b.rank-a.rank).slice(0,6);
+  if(map){
+    if(meMarker){ map.removeLayer(meMarker); map.removeLayer(meCircle); }
+    meCircle = L.circle([me.lat,me.lng],{radius:Math.min(me.acc,300), color:"#4da3ff", weight:1, fillOpacity:.12}).addTo(map);
+    meMarker = L.circleMarker([me.lat,me.lng],{radius:8, color:"#fff", weight:3, fillColor:"#2f80ff", fillOpacity:1}).addTo(map);
+    map.fitBounds(L.latLngBounds([[me.lat,me.lng], ...ranked.map(r=>[r.lat,r.lng])]).pad(0.2));
+  }
+  const fmtKm = k => k<1 ? Math.round(k*1000)+" م" : k.toFixed(k<10?1:0)+" كم";
+  const cur = curScored(); const bw = bestWindow(SCORED);
+  openModal(`<h2>🎯 أقرب أفضل المواقع لك</h2>
+    <div class="mute">مرتّبة بالجمع بين مؤشر الصيد الآن وقربها منك${bw?` · أفضل وقت اليوم: ${fmtH(bw.row.t)}`:""}</div>
+    ${ranked.map((r,i)=>`<div class="spot" style="cursor:default">
+      <div class="dot" style="background:${scoreHex(r.sc)}">${r.sc}</div>
+      <div style="flex:1"><div style="font-weight:700" data-noterm>${i===0?"⭐ ":""}${esc(r.name)}</div>
+        <div class="mute">${TYPE_AR[r.type]||""} · ${fmtKm(r.km)}${r.near?` · <span style="color:#ffb3b3">قرب ${r.near}</span>`:""}</div>
+        <div class="row" style="margin-top:6px">${navBtn(r.lat,r.lng,"اذهب")}<button class="btn sm sec" data-nearshow="${r.id}">التفاصيل</button></div></div></div>`).join("")}
+    ${cur && cur.score<50?`<div class="banner" style="margin-top:10px">المؤشر العام منخفض الآن (${cur.score})؛ قد يكون الأفضل الانتظار إلى ${bw?fmtH(bw.row.t):"وقت أفضل"}.</div>`:""}`);
+  $$("[data-nearshow]").forEach(x=>x.onclick=()=>{ const r=ranked.find(y=>y.id===x.dataset.nearshow); closeModal(); if(map) map.setView([r.lat,r.lng],15); openSpot(r); });
+}
+$("#btnNearest").onclick = nearestBest;
 
 /* --- Overpass scan --- */
 function pointInPoly(pt, poly){ // pt [lat,lng], poly [[lat,lng],...]
@@ -1330,6 +1369,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; reloaded=true; location.reload(); });
 }
 </script>
-<script src="beginner.js?v=1.8"></script>
+<script src="beginner.js?v=1.9"></script>
 </body>
 </html>
