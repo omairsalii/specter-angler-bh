@@ -128,7 +128,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v1.9</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.0</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -277,7 +277,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 1.9 — Specter Angler BH</p>
+    <p class="mute">الإصدار 2.0 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -296,7 +296,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="visuals.js?v=1.9"></script>
+<script src="visuals.js?v=2.0"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -375,28 +375,38 @@ function moonName(p){
 /* =========================================================
    Live data (Open-Meteo)
    ========================================================= */
+/* Offshore points around Bahrain: used when a coastal grid cell has no sea data.
+   Waves and tides come from different ocean models, so each variable is taken
+   from the nearest point that actually has it. */
+const SEA_POINTS = [[26.30,50.80],[26.12,50.76],[25.92,50.70],[25.75,50.55],[26.05,50.35],[26.35,50.45],[26.25,50.62]];
+const MARINE_VARS = ["wave_height","sea_surface_temperature","sea_level_height_msl","ocean_current_velocity"];
 async function fetchConditions(lat, lng){
+  lat=+lat; lng=+lng;
   const w = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,pressure_msl,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Asia%2FBahrain&forecast_days=3`;
-  const m = (la,lo)=>`https://marine-api.open-meteo.com/v1/marine?latitude=${la}&longitude=${lo}&hourly=wave_height,sea_surface_temperature,sea_level_height_msl,ocean_current_velocity&timezone=Asia%2FBahrain&forecast_days=3`;
-  const [wr, mr] = await Promise.all([fetch(w).then(r=>r.json()), fetch(m(lat,lng)).then(r=>r.json()).catch(()=>null)]);
-  let marine = mr && mr.hourly ? mr.hourly : null;
-  const empty = h => !h || !h.wave_height || h.wave_height.every(v=>v==null);
-  if(empty(marine)){ // coastal cell has no sea data — fall back to offshore point
-    const r2 = await fetch(m(SEA_REF[0],SEA_REF[1])).then(r=>r.json()).catch(()=>null);
-    marine = r2 && r2.hourly ? r2.hourly : null;
-  }
+  const m = (la,lo)=>`https://marine-api.open-meteo.com/v1/marine?latitude=${la}&longitude=${lo}&hourly=${MARINE_VARS.join(",")}&timezone=Asia%2FBahrain&forecast_days=3`;
+  const here = {lat, lng};
+  const cands = [[lat,lng], ...SEA_POINTS.map(p=>[p[0],p[1]]).sort((a,b)=>kmBetween(here,{lat:a[0],lng:a[1]})-kmBetween(here,{lat:b[0],lng:b[1]})).slice(0,4)];
+  const [wr, ...mrs] = await Promise.all([fetch(w).then(r=>r.json()), ...cands.map(c=>fetch(m(c[0],c[1])).then(r=>r.json()).catch(()=>null))]);
+  // for each marine variable pick the nearest candidate that has real values
+  const pick = {}, srcKm = {};
+  MARINE_VARS.forEach(k=>{
+    for(let i=0;i<mrs.length;i++){
+      const h = mrs[i] && mrs[i].hourly;
+      if(h && h[k] && h[k].some(v=>v!=null)){ pick[k]=h; srcKm[k]=kmBetween(here,{lat:cands[i][0],lng:cands[i][1]}); break; }
+    }
+  });
   if(!wr || !wr.hourly || !wr.hourly.time) throw new Error("no weather");
   const H = wr.hourly, rows = [];
   for(let i=0;i<H.time.length;i++){
     const t = new Date(H.time[i] + TZ_OFFSET);
-    const j = marine && marine.time ? marine.time.indexOf(H.time[i]) : -1;
-    const mv = k => (j>=0 && marine[k] && marine[k][j]!=null) ? marine[k][j] : null;
+    const mv = k => { const h=pick[k]; if(!h) return null; const j=h.time.indexOf(H.time[i]); return (j>=0 && h[k][j]!=null) ? h[k][j] : null; };
     const hv = k => (H[k] && H[k][i]!=null) ? H[k][i] : null;
     rows.push({
       t, air:hv("temperature_2m"), p:hv("pressure_msl"), cloud:hv("cloud_cover"),
       wind:hv("wind_speed_10m"), wdir:hv("wind_direction_10m"), gust:hv("wind_gusts_10m"),
       wave: mv("wave_height"), sst: mv("sea_surface_temperature"),
-      sl: mv("sea_level_height_msl"), cur: mv("ocean_current_velocity")
+      sl: mv("sea_level_height_msl"), cur: mv("ocean_current_velocity"),
+      tideKm: srcKm.sea_level_height_msl
     });
   }
   return rows;
@@ -416,7 +426,7 @@ function factorsAt(rows, i, lat, lng){
     r.tideState = Math.abs(rate)<0.03 ? "ركود (ذروة مدّ أو جزر)" : rate>0 ? "مدّ (الماء يرتفع)" : "جزر (الماء ينخفض)";
     if(mag>0.6) why.push(["+", "الماء يتحرك بقوة: "+r.tideState]);
     else if(Math.abs(rate)<0.03) why.push(["-", "ركود الماء: السمك أقل نشاطاً"]);
-  } else { f.tide = 0.5; r.tideState = "غير متوفر"; }
+  } else { f.tide = 0.5; r.tideState = "غير متوفرة حالياً"; }
   // Light
   const noon = new Date(r.t); noon.setHours(12,0,0,0);
   const st = sunTimes(noon, lat, lng);
@@ -745,7 +755,7 @@ async function openSpot(s){
 function factorChips(x){
   const r = x.row;
   const items = [
-    ["حركة الماء", r.tideState||"—"],
+    ["حركة الماء", (r.tideState||"—") + (r.tideKm>3 ? ` (من نقطة بحرية على بعد ${Math.round(r.tideKm)} كم)` : "")],
     ["الريح", r.wind!=null? Math.round(r.wind)+" كم/س":"—"],
     ["الموج", r.wave!=null? r.wave.toFixed(1)+" م":"—"],
     ["حرارة الماء", r.sst!=null? Math.round(r.sst)+"°م":"—"],
@@ -1369,6 +1379,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; reloaded=true; location.reload(); });
 }
 </script>
-<script src="beginner.js?v=1.9"></script>
+<script src="beginner.js?v=2.0"></script>
 </body>
 </html>
