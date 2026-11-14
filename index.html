@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1626">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Specter Angler">
+<title>Specter Angler BH — الصَّيَّادُ الشَّبَح</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#0a1626; --bg2:#0f2036; --card:#13283f; --line:#1f3a57;
+  --ink:#e8f1f8; --mute:#8fa8bf; --acc:#2ec4b6; --acc2:#ffb347;
+  --good:#2ecc71; --mid:#f1c40f; --bad:#e74c3c; --danger:#ff5d5d;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Tajawal,system-ui,sans-serif;font-size:16px;line-height:1.6}
+header{position:sticky;top:0;z-index:1000;background:linear-gradient(180deg,#081221,#0a1626);padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+header .logo{width:34px;height:34px;flex:none}
+header h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.3px}
+header small{display:block;color:var(--mute);font-size:12px;font-weight:500}
+header .beg{margin-inline-start:auto;font-size:12px;color:var(--mute);display:flex;align-items:center;gap:6px}
+main{padding:12px 12px calc(84px + env(safe-area-inset-bottom))}
+section.view{display:none}
+section.view.on{display:block}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#081221;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{background:none;border:0;color:var(--mute);font:inherit;font-size:11px;padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h2{font-size:17px;margin:0 0 8px}
+.card h3{font-size:15px;margin:12px 0 6px;color:var(--acc)}
+.mute{color:var(--mute);font-size:13px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{background:var(--acc);color:#04201d;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+.btn.sec{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.chip{display:inline-block;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;margin:2px}
+.chip.warn{border-color:var(--danger);color:#ffd0d0}
+.chip.ok{border-color:var(--good);color:#c9f7da}
+#map{height:46vh;min-height:300px;border-radius:var(--r);border:1px solid var(--line);margin-bottom:12px;z-index:1}
+.score{font-size:42px;font-weight:800;line-height:1}
+.bar{height:8px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.bar>i{display:block;height:100%}
+.hours{display:flex;gap:3px;align-items:flex-end;height:70px;overflow-x:auto;padding-bottom:4px}
+.hours div{flex:none;width:14px;border-radius:3px 3px 0 0;position:relative}
+.hours div.now{outline:2px solid #fff}
+.hlabels{display:flex;gap:3px;font-size:9px;color:var(--mute);overflow-x:hidden}
+.hlabels span{flex:none;width:14px;text-align:center}
+.spot{display:flex;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--line);cursor:pointer}
+.spot:last-child{border-bottom:0}
+.dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#07131f;flex:none}
+label.f{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+select,input,textarea{width:100%;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:70px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 6px;font:inherit;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--acc);color:#04201d;border-color:var(--acc);font-weight:700}
+.rec{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px}
+.rec b{color:var(--acc2);white-space:nowrap}
+ol.steps{padding-inline-start:20px;margin:6px 0}
+ol.steps li{margin-bottom:6px}
+.fish{display:flex;gap:12px;align-items:center;cursor:pointer}
+.fish svg{width:120px;height:62px;flex:none;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:10px}
+.ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
+.ph.big{width:100%;height:auto;aspect-ratio:16/10}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .fallback{display:none;width:100%;height:100%}
+.ph.err img{display:none}
+.ph.err .fallback{display:block}
+.fishbig svg{width:100%;height:auto;background:linear-gradient(180deg,#0f2b45,#0b1f33);border-radius:12px}
+.sub{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.sub button{white-space:nowrap}
+.banner{background:#3a2a10;border:1px solid #7a5a20;color:#ffe2b0;border-radius:10px;padding:10px;font-size:13px;margin-bottom:10px}
+.banner.red{background:#3a1414;border-color:#7a2a2a;color:#ffd0d0}
+.term{border-bottom:1px dotted var(--acc);cursor:help}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.modal .sheet{background:var(--bg2);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.close{float:left;background:none;border:0;color:var(--mute);font-size:26px;cursor:pointer;line-height:1}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0e3a35;border:1px solid var(--acc);padding:8px 14px;border-radius:10px;z-index:3000;display:none;font-size:14px}
+.leaflet-container{background:#0b1f33;font-family:Tajawal,sans-serif}
+.leaflet-popup-content{font-family:Tajawal,sans-serif;direction:rtl;text-align:right}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:right}
+.switch{position:relative;width:40px;height:22px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:22px;transition:.2s}
+.switch span:before{content:"";position:absolute;width:16px;height:16px;top:3px;right:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--acc)}
+.switch input:checked+span:before{transform:translateX(-18px)}
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r="30" fill="#13283f" stroke="#2ec4b6" stroke-width="2"/>
+    <path d="M14 34c6-9 18-13 28-9l8-5-2 9 2 9-8-5c-10 4-22 0-28-9z" fill="#2ec4b6"/>
+    <circle cx="22" cy="31" r="2" fill="#0a1626"/>
+    <path d="M32 6v10M32 16c0 6 5 6 5 11" stroke="#ffb347" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <h1>Specter Angler BH</h1>
+    <small>الصَّيَّادُ الشَّبَح — البحرين</small>
+  </div>
+  <label class="beg">وضع المبتدئ
+    <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
+  </label>
+</header>
+
+<main>
+
+<!-- ============ MAP / FORECAST ============ -->
+<section class="view on" id="v-map">
+  <div id="netBanner" class="banner" style="display:none"></div>
+  <div id="map"></div>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn sm" id="btnScan">مسح الساحل عن نقاط مرشّحة</button>
+    <button class="btn sm sec" id="btnAdd">+ أضف نقطتي</button>
+    <button class="btn sm sec" id="btnLayer">صور فضائية / خريطة</button>
+  </div>
+
+  <div class="card" id="nowCard">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <div class="mute">مؤشر الصيد العام الآن</div>
+        <div class="score" id="nowScore">—</div>
+      </div>
+      <div style="text-align:left">
+        <div class="mute">أفضل نافذة اليوم</div>
+        <div style="font-weight:800;font-size:18px" id="bestWin">—</div>
+      </div>
+    </div>
+    <div class="hours" id="hours" style="margin-top:12px"></div>
+    <div class="hlabels" id="hlabels"></div>
+    <div id="nowFactors" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h2>أفضل النقاط الآن</h2>
+    <div class="mute" id="spotsNote">اضغط «مسح الساحل» لاستخراج النقاط المرشّحة، أو أضف نقاطك.</div>
+    <div id="spotList"></div>
+  </div>
+</section>
+
+<!-- ============ RIG / WHAT TO TIE ============ -->
+<section class="view" id="v-rig">
+  <div class="card">
+    <h2>ماذا أربط اليوم؟</h2>
+    <div class="mute">تُملأ الظروف تلقائياً من بيانات البحر، وعدّلها حسب ما تراه بعينك.</div>
+
+    <label class="f">صفاء الماء (انظر إليه بنفسك)</label>
+    <div class="seg" data-k="clarity">
+      <button data-v="clear">صافٍ</button><button data-v="stained" class="on">عكارة خفيفة</button><button data-v="murky">عكر</button>
+    </div>
+
+    <label class="f">الإضاءة</label>
+    <div class="seg" data-k="light">
+      <button data-v="low">فجر / غروب</button><button data-v="day">نهار مشمس</button><button data-v="cloudy">نهار غائم</button><button data-v="night">ليل</button>
+    </div>
+
+    <label class="f">طبيعة القاع أمامك</label>
+    <div class="seg" data-k="bottom">
+      <button data-v="sand" class="on">رمل</button><button data-v="rocks">صخور / كاسر</button><button data-v="grass">أعشاب</button>
+    </div>
+
+    <label class="f">العمق القريب</label>
+    <div class="seg" data-k="depth">
+      <button data-v="shallow">ضحل (أقل من متر ونصف)</button><button data-v="mid" class="on">متوسط</button><button data-v="deep">عميق (أكثر من 3 أمتار)</button>
+    </div>
+
+    <div class="row" style="margin-top:6px">
+      <div style="flex:1"><label class="f">الريح (كم/س)</label><input type="number" id="inWind" value="12"></div>
+      <div style="flex:1"><label class="f">الموج (م)</label><input type="number" step="0.1" id="inWave" value="0.4"></div>
+      <div style="flex:1"><label class="f">حرارة الماء (°م)</label><input type="number" id="inSst" value="25"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="btnRig">أعطني التجهيزة</button><button class="btn sec sm" id="btnRigAuto">املأ من بيانات البحر</button></div>
+  </div>
+  <div id="rigOut"></div>
+</section>
+
+<!-- ============ FISH GUIDE ============ -->
+<section class="view" id="v-fish">
+  <div class="banner red" id="banNow" style="display:none"></div>
+  <div class="sub seg" id="fishFilter">
+    <button data-v="all" class="on">الكل</button><button data-v="lure">تضرب الطعم الصناعي</button><button data-v="danger">خطرة وسامّة</button><button data-v="ban">عليها منع موسمي</button>
+  </div>
+  <div id="fishList"></div>
+  <div class="card">
+    <h2>إسعاف أولي عند اللسع</h2>
+    <ol class="steps">
+      <li>اخرج من الماء فوراً واطلب المساعدة. الطوارئ في البحرين: <b>999</b>.</li>
+      <li>اغمر مكان اللسعة في ماء ساخن بقدر ما تتحمّل دون أن يحرقك (نحو 45°م) لمدة 30 إلى 90 دقيقة، فالحرارة تُضعف كثيراً من سموم الأشواك.</li>
+      <li>لا تجرح المكان ولا تمصّه، ولا تربطه برباط ضاغط.</li>
+      <li>اذهب إلى الطوارئ، خصوصاً مع لسعة السمكة الحجرية أو الراي، أو إن بقي جزء من الشوكة في الجرح.</li>
+    </ol>
+    <div class="mute">هذه إرشادات عامة للتوعية وليست بديلاً عن الطبيب.</div>
+  </div>
+</section>
+
+<!-- ============ KNOTS + LESSONS ============ -->
+<section class="view" id="v-learn">
+  <div class="sub seg" id="learnTabs">
+    <button data-v="knots" class="on">العُقد</button><button data-v="lessons">الدروس</button><button data-v="glossary">المصطلحات</button>
+  </div>
+  <div id="tipCard"></div>
+  <div id="learnOut"></div>
+</section>
+
+<!-- ============ LOG ============ -->
+<section class="view" id="v-log">
+  <div class="card">
+    <h2>سجّل رحلة</h2>
+    <label class="f">النقطة</label>
+    <select id="lgSpot"></select>
+    <div class="row">
+      <div style="flex:1"><label class="f">التاريخ والوقت</label><input type="datetime-local" id="lgTime"></div>
+    </div>
+    <div class="row">
+      <div style="flex:1"><label class="f">نوع الطعم</label>
+        <select id="lgLure"><option>سطحي (بوبر / ستكبيت)</option><option>جك معدني</option><option>سوفت بيت</option><option>منو (طعم سمكة)</option><option>ملعقة</option><option>آخر</option></select></div>
+      <div style="flex:1"><label class="f">اللون</label>
+        <select id="lgColor"><option>فضي / طبيعي</option><option>أبيض / لؤلؤي</option><option>شارتروز / أخضر فاقع</option><option>وردي / برتقالي</option><option>أسود / بنفسجي</option><option>ذهبي</option><option>آخر</option></select></div>
+    </div>
+    <div class="row">
+      <div style="flex:1"><label class="f">النوع المصطاد</label><select id="lgFish"></select></div>
+      <div style="flex:1"><label class="f">العدد</label><input type="number" id="lgCount" value="0" min="0"></div>
+    </div>
+    <label class="f">ملاحظات</label>
+    <textarea id="lgNote" rows="2" placeholder="مثلاً: ضربات قرب نهاية الكاسر مع بداية المدّ"></textarea>
+    <div class="mute" style="margin-top:6px">تُحفظ ظروف البحر لحظة التسجيل تلقائياً مع الرحلة.</div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="btnLog">حفظ</button></div>
+  </div>
+  <div class="card"><h2>ماذا تعلّمنا من سجلّك؟</h2><div id="logStats" class="mute">سجّل بضع رحلات (حتى الرحلات بلا صيد) لتظهر الأنماط.</div></div>
+  <div class="card"><h2>رحلاتي</h2><div id="logList"></div>
+    <div class="row" style="margin-top:10px"><button class="btn sec sm" id="btnExport">نسخ نسخة احتياطية</button><button class="btn sec sm" id="btnImport">استيراد</button></div>
+  </div>
+</section>
+
+<!-- ============ ABOUT ============ -->
+<section class="view" id="v-about">
+  <div class="card">
+    <h2>كيف يعمل التطبيق؟</h2>
+    <p>يجمع <b>مؤشر الصيد</b> سبعة عوامل لكل ساعة: حركة المدّ والجزر، والإضاءة، والريح، والموج، واتجاه الضغط الجوي، وطور القمر، وحرارة الماء. البيانات حيّة من خدمة Open-Meteo المجانية، وتُحسب حركة الشمس والقمر داخل التطبيق.</p>
+    <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
+    <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
+    <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
+    <p class="mute">الإصدار 1.0 — Specter Angler BH</p>
+  </div>
+</section>
+
+</main>
+
+<nav class="tabs" id="tabs">
+  <button data-v="map" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>الخريطة</button>
+  <button data-v="rig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v8"/><path d="M12 10c0 5 6 5 6 9a3 3 0 0 1-6 0"/></svg>ماذا أربط؟</button>
+  <button data-v="fish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c4-6 11-7 16-3l3-3v12l-3-3c-5 4-12 3-16-3z"/><circle cx="8" cy="11" r="1"/></svg>الأسماك</button>
+  <button data-v="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6l10-4 10 4-10 4z"/><path d="M6 8v6c0 2 3 4 6 4s6-2 6-4V8"/></svg>تعلّم</button>
+  <button data-v="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>سجلّي</button>
+  <button data-v="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.5"/></svg>عن التطبيق</button>
+</nav>
+
+<div class="modal" id="modal"><div class="sheet"><button class="close" onclick="closeModal()">×</button><div id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+"use strict";
+/* =========================================================
+   Specter Angler BH — v1.0
+   ========================================================= */
+const TZ_OFFSET = "+03:00";
+const BH_CENTER = [26.07, 50.55];
+const SEA_REF = [26.25, 50.75];            // offshore reference point for marine data
+const BBOX = "25.55,50.25,26.40,50.95";   // south,west,north,east
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("sab_"+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("sab_"+k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",2600); }
+function openModal(html){ $("#modalBody").innerHTML=html; $("#modal").classList.add("on"); }
+function closeModal(){ $("#modal").classList.remove("on"); }
+$("#modal").addEventListener("click", e=>{ if(e.target.id==="modal") closeModal(); });
+const fmtH = d => d.toLocaleTimeString("ar-BH-u-nu-latn",{hour:"numeric",minute:"2-digit",hour12:true});
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+const scoreColor = s => s>=70 ? "var(--good)" : s>=50 ? "var(--mid)" : "var(--bad)";
+const scoreHex = s => s>=70 ? "#2ecc71" : s>=50 ? "#f1c40f" : "#e74c3c";
+
+/* ---------------- Beginner mode ---------------- */
+const begToggle = $("#begToggle");
+begToggle.checked = store.get("beginner", true);
+begToggle.addEventListener("change", ()=>{ store.set("beginner", begToggle.checked); renderAll(); });
+const isBeg = ()=>begToggle.checked;
+
+/* ---------------- Tabs ---------------- */
+let mapInit = false;
+$$("#tabs button").forEach(b=>b.addEventListener("click", ()=>{
+  $$("#tabs button").forEach(x=>x.classList.toggle("on", x===b));
+  $$("section.view").forEach(s=>s.classList.toggle("on", s.id==="v-"+b.dataset.v));
+  if(b.dataset.v==="map" && map) setTimeout(()=>map.invalidateSize(),50);
+  window.scrollTo(0,0);
+}));
+
+/* =========================================================
+   Astronomy (sun & moon) — compact, after SunCalc formulas
+   ========================================================= */
+const rad = Math.PI/180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545, OBL = rad*23.4397;
+const toDays = d => d.valueOf()/dayMs - 0.5 + J1970 - J2000;
+const fromJulian = j => new Date((j + 0.5 - J1970) * dayMs);
+function sunTimes(date, lat, lng){
+  const lw = rad * -lng, phi = rad * lat, d = toDays(date);
+  const n = Math.round(d - 0.0009 - lw/(2*Math.PI));
+  const ds = 0.0009 + lw/(2*Math.PI) + n;
+  const M = rad*(357.5291 + 0.98560028*ds);
+  const C = rad*(1.9148*Math.sin(M) + 0.02*Math.sin(2*M) + 0.0003*Math.sin(3*M));
+  const L = M + C + rad*102.9372 + Math.PI;
+  const dec = Math.asin(Math.sin(OBL)*Math.sin(L));
+  const Jnoon = J2000 + ds + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
+  const w = Math.acos((Math.sin(-0.833*rad) - Math.sin(phi)*Math.sin(dec)) / (Math.cos(phi)*Math.cos(dec)));
+  const a = 0.0009 + (w + lw)/(2*Math.PI) + n;
+  const Jset = J2000 + a + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
+  const Jrise = Jnoon - (Jset - Jnoon);
+  return { sunrise: fromJulian(Jrise), sunset: fromJulian(Jset) };
+}
+function moonPhase(date){ // 0 = new, 0.5 = full
+  const jd = date.valueOf()/dayMs + 2440587.5;
+  let p = ((jd - 2451550.1) / 29.530588853) % 1; if(p<0) p+=1; return p;
+}
+function moonName(p){
+  if(p<0.04||p>0.96) return "محاق";
+  if(p<0.21) return "هلال متزايد";
+  if(p<0.29) return "تربيع أول";
+  if(p<0.46) return "أحدب متزايد";
+  if(p<0.54) return "بدر";
+  if(p<0.71) return "أحدب متناقص";
+  if(p<0.79) return "تربيع أخير";
+  return "هلال متناقص";
+}
+
+/* =========================================================
+   Live data (Open-Meteo)
+   ========================================================= */
+async function fetchConditions(lat, lng){
+  const w = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,pressure_msl,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Asia%2FBahrain&forecast_days=3`;
+  const m = (la,lo)=>`https://marine-api.open-meteo.com/v1/marine?latitude=${la}&longitude=${lo}&hourly=wave_height,sea_surface_temperature,sea_level_height_msl,ocean_current_velocity&timezone=Asia%2FBahrain&forecast_days=3`;
+  const [wr, mr] = await Promise.all([fetch(w).then(r=>r.json()), fetch(m(lat,lng)).then(r=>r.json()).catch(()=>null)]);
+  let marine = mr && mr.hourly ? mr.hourly : null;
+  const empty = h => !h || !h.wave_height || h.wave_height.every(v=>v==null);
+  if(empty(marine)){ // coastal cell has no sea data — fall back to offshore point
+    const r2 = await fetch(m(SEA_REF[0],SEA_REF[1])).then(r=>r.json()).catch(()=>null);
+    marine = r2 && r2.hourly ? r2.hourly : null;
+  }
+  if(!wr || !wr.hourly || !wr.hourly.time) throw new Error("no weather");
+  const H = wr.hourly, rows = [];
+  for(let i=0;i<H.time.length;i++){
+    const t = new Date(H.time[i] + TZ_OFFSET);
+    const j = marine && marine.time ? marine.time.indexOf(H.time[i]) : -1;
+    const mv = k => (j>=0 && marine[k] && marine[k][j]!=null) ? marine[k][j] : null;
+    const hv = k => (H[k] && H[k][i]!=null) ? H[k][i] : null;
+    rows.push({
+      t, air:hv("temperature_2m"), p:hv("pressure_msl"), cloud:hv("cloud_cover"),
+      wind:hv("wind_speed_10m"), wdir:hv("wind_direction_10m"), gust:hv("wind_gusts_10m"),
+      wave: mv("wave_height"), sst: mv("sea_surface_temperature"),
+      sl: mv("sea_level_height_msl"), cur: mv("ocean_current_velocity")
+    });
+  }
+  return rows;
+}
+
+/* =========================================================
+   Scoring
+   ========================================================= */
+function factorsAt(rows, i, lat, lng){
+  const r = rows[i], f = {}, why = [];
+  // Tide movement
+  if(r.sl!=null && rows[i-1] && rows[i+1] && rows[i-1].sl!=null && rows[i+1].sl!=null){
+    const rate = (rows[i+1].sl - rows[i-1].sl)/2;          // m per hour
+    const mag = clamp(Math.abs(rate)/0.22, 0, 1);
+    f.tide = 0.25 + 0.75*mag + (rate>0.03 ? 0.08 : 0);
+    f.tide = clamp(f.tide,0,1);
+    r.tideState = Math.abs(rate)<0.03 ? "ركود (ذروة مدّ أو جزر)" : rate>0 ? "مدّ (الماء يرتفع)" : "جزر (الماء ينخفض)";
+    if(mag>0.6) why.push(["+", "الماء يتحرك بقوة: "+r.tideState]);
+    else if(Math.abs(rate)<0.03) why.push(["-", "ركود الماء: السمك أقل نشاطاً"]);
+  } else { f.tide = 0.5; r.tideState = "غير متوفر"; }
+  // Light
+  const noon = new Date(r.t); noon.setHours(12,0,0,0);
+  const st = sunTimes(noon, lat, lng);
+  const hr = (r.t - st.sunrise)/36e5, hs = (r.t - st.sunset)/36e5;
+  if((hr>=-1 && hr<=1.5) || (hs>=-1.5 && hs<=1)){ f.light=1; r.lightK="low"; why.push(["+", hr>=-1&&hr<=1.5 ? "وقت الفجر: أقوى وقت للطعم الصناعي" : "وقت الغروب: المفترس يقترب من الشاطئ"]); }
+  else if(r.t < st.sunrise || r.t > st.sunset){ f.light=0.55; r.lightK="night"; }
+  else { f.light = 0.3 + 0.4*(r.cloud||0)/100; r.lightK = (r.cloud||0)>60 ? "cloudy" : "day"; if((r.cloud||0)>60) why.push(["+","غيوم تخفف الضوء"]); }
+  // Wind
+  const w = r.wind ?? 10, g = r.gust ?? w;
+  f.wind = g>45 ? 0.1 : w<5 ? 0.6 : w<=20 ? 1 : w<=30 ? 0.6 : 0.2;
+  if(w>30 || g>45) why.push(["-", "ريح قوية: الرمي صعب والبحر مضطرب"]);
+  // Waves
+  const wv = r.wave;
+  f.wave = wv==null ? 0.6 : wv<0.1 ? 0.55 : wv<=0.9 ? 1 : wv<=1.5 ? 0.6 : 0.2;
+  if(wv!=null && wv<0.1) why.push(["-","بحر زجاجي هادئ جداً: السمك حذر"]);
+  if(wv!=null && wv>1.5) why.push(["-","موج عالٍ: خطر على الصخور"]);
+  // Pressure trend (3h)
+  const p3 = (rows[i-3] && r.p!=null && rows[i-3].p!=null) ? r.p - rows[i-3].p : 0;
+  f.press = (p3<=-0.5 && p3>=-2.5) ? 1 : p3<-2.5 ? 0.5 : p3>1 ? 0.4 : 0.65;
+  if(p3<=-0.5 && p3>=-2.5) why.push(["+","الضغط ينخفض تدريجياً: نشاط أعلى"]);
+  if(p3>1) why.push(["-","الضغط يرتفع بسرعة"]);
+  // Moon
+  const mp = moonPhase(r.t);
+  f.moon = 0.5 + 0.5*Math.abs(Math.cos(2*Math.PI*mp));
+  if(f.moon>0.9) why.push(["+", moonName(mp)+": تيارات مدّ أقوى"]);
+  // Sea temperature
+  const s = r.sst;
+  f.sst = s==null ? 0.7 : (s>=22 && s<=30) ? 1 : ((s>=18&&s<22)||(s>30&&s<=33)) ? 0.7 : 0.4;
+  if(s!=null && s>33) why.push(["-","الماء حار جداً: صِد في الفجر والليل"]);
+  if(s!=null && s<18) why.push(["-","الماء بارد: سحب أبطأ"]);
+  const W = {tide:.28, light:.22, wind:.12, wave:.10, press:.10, moon:.08, sst:.10};
+  let total = 0; for(const k in W) total += W[k]*f[k];
+  return { score: Math.round(total*100), f, why, row:r, moon:mp };
+}
+function bestWindow(scored){
+  const today = new Date().toDateString();
+  let best=null;
+  for(let i=0;i<scored.length;i++){
+    if(scored[i].row.t.toDateString()!==today) continue;
+    const s = scored[i].score + (scored[i+1]?scored[i+1].score:0);
+    if(!best || s>best.s) best = {s, i};
+  }
+  return best ? scored[best.i] : null;
+}
+
+/* =========================================================
+   Map & spots
+   ========================================================= */
+let map, sat, osm, onSat = true, spotLayer, addMode = false;
+let RECORDS = null;   // conditions rows for Bahrain overall
+let SCORED = [];
+let spots = store.get("spots", []);       // auto candidates
+let mySpots = store.get("myspots", []);   // user spots
+const TYPE_W = { breakwater:0.95, groyne:0.85, pier:0.75, reef:0.85, cape:0.8, user:0.8 };
+const TYPE_AR = { breakwater:"كاسر أمواج", groyne:"حاجز صخري", pier:"رصيف بحري", reef:"شعاب / فشت", cape:"رأس يابسة", user:"نقطتي" };
+
+function initMap(){
+  if(typeof L === "undefined"){ $("#map").innerHTML = '<div class="mute" style="padding:20px">تعذّر تحميل الخريطة. تأكد من الاتصال بالإنترنت.</div>'; return; }
+  map = L.map("map",{zoomControl:true, attributionControl:true}).setView(BH_CENTER, 10);
+  sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19, attribution:"Esri"});
+  osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"© OpenStreetMap"});
+  sat.addTo(map);
+  spotLayer = L.layerGroup().addTo(map);
+  map.on("click", e=>{
+    if(!addMode) return;
+    addMode = false; $("#btnAdd").textContent = "+ أضف نقطتي";
+    openModal(`<h2>نقطة جديدة</h2>
+      <label class="f">اسم النقطة</label><input id="nsName" placeholder="مثلاً: كاسر بلاج الجزائر">
+      <label class="f">طبيعتها</label>
+      <select id="nsType"><option value="user">عام</option><option value="breakwater">كاسر أمواج</option><option value="groyne">حاجز صخري</option><option value="pier">رصيف</option><option value="reef">شعاب / فشت</option><option value="cape">رأس يابسة</option></select>
+      <div class="row" style="margin-top:12px"><button class="btn" id="nsSave">حفظ</button></div>`);
+    $("#nsSave").onclick = ()=>{
+      const name = $("#nsName").value.trim() || "نقطتي "+(mySpots.length+1);
+      mySpots.push({id:"u"+Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, type:$("#nsType").value, name, mine:true});
+      store.set("myspots", mySpots); closeModal(); renderSpots(); fillLogSpots(); toast("حُفظت النقطة");
+    };
+  });
+}
+$("#btnLayer").onclick = ()=>{ if(!map) return; if(onSat){ map.removeLayer(sat); osm.addTo(map);} else { map.removeLayer(osm); sat.addTo(map);} onSat=!onSat; };
+$("#btnAdd").onclick = ()=>{ addMode = !addMode; $("#btnAdd").textContent = addMode ? "اضغط على الخريطة…" : "+ أضف نقطتي"; if(addMode) toast("اضغط على موقع النقطة في الخريطة"); };
+
+/* --- Overpass scan --- */
+function pointInPoly(pt, poly){ // pt [lat,lng], poly [[lat,lng],...]
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const [yi,xi]=poly[i],[yj,xj]=poly[j];
+    if(((yi>pt[0])!==(yj>pt[0])) && (pt[1] < (xj-xi)*(pt[0]-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+async function scanCoast(){
+  const btn = $("#btnScan"); btn.disabled = true; btn.textContent = "جارٍ مسح الساحل…";
+  const q = `[out:json][timeout:90];
+(
+ way["man_made"~"^(breakwater|groyne|pier)$"](${BBOX});
+ node["man_made"~"^(breakwater|groyne|pier)$"](${BBOX});
+ way["natural"="reef"](${BBOX});
+ node["natural"~"^(reef|cape)$"](${BBOX});
+);
+out center tags;
+(
+ way["landuse"~"^(military|port)$"](${BBOX});
+ way["military"](${BBOX});
+ way["industrial"="port"](${BBOX});
+ way["aeroway"="aerodrome"](${BBOX});
+ way["leisure"="nature_reserve"](${BBOX});
+ way["boundary"="protected_area"](${BBOX});
+ relation["landuse"~"^(military|port)$"](${BBOX});
+ relation["aeroway"="aerodrome"](${BBOX});
+ relation["boundary"="protected_area"](${BBOX});
+);
+out geom tags;`;
+  try{
+    const res = await fetch("https://overpass-api.de/api/interpreter",{method:"POST", body:"data="+encodeURIComponent(q)});
+    const js = await res.json();
+    const cands = [], zones = [];
+    for(const el of js.elements){
+      const t = el.tags||{};
+      const isZone = t.landuse==="military"||t.landuse==="port"||t.military||t.industrial==="port"||t.aeroway==="aerodrome"||t.leisure==="nature_reserve"||t.boundary==="protected_area";
+      if(isZone){
+        const label = t.landuse==="military"||t.military ? "منطقة عسكرية" : (t.landuse==="port"||t.industrial==="port") ? "ميناء" : t.aeroway ? "مطار" : "محمية";
+        if(el.geometry) zones.push({poly: el.geometry.map(g=>[g.lat,g.lon]), label});
+        if(el.members) el.members.forEach(m=>{ if(m.geometry && m.role!=="inner") zones.push({poly:m.geometry.map(g=>[g.lat,g.lon]), label}); });
+        continue;
+      }
+      const lat = el.lat ?? (el.center && el.center.lat), lon = el.lon ?? (el.center && el.center.lon);
+      if(lat==null) continue;
+      const type = t.man_made || t.natural;
+      cands.push({lat, lng:lon, type, name: t.name || t["name:ar"] || ""});
+    }
+    // dedupe on ~300 m grid
+    const seen = new Set(), out = [];
+    for(const c of cands){
+      const key = Math.round(c.lat/0.003)+":"+Math.round(c.lng/0.003);
+      if(seen.has(key)) continue; seen.add(key);
+      let excluded = null, near = null;
+      for(const z of zones){
+        if(z.poly.length>2 && pointInPoly([c.lat,c.lng], z.poly)){ excluded = z.label; break; }
+      }
+      if(excluded) continue;
+      for(const z of zones){
+        const lats=z.poly.map(p=>p[0]), lngs=z.poly.map(p=>p[1]);
+        if(c.lat>Math.min(...lats)-0.004 && c.lat<Math.max(...lats)+0.004 && c.lng>Math.min(...lngs)-0.004 && c.lng<Math.max(...lngs)+0.004){ near = z.label; break; }
+      }
+      out.push({id:"a"+key, ...c, near, name: c.name || TYPE_AR[c.type]+" "+(out.length+1)});
+    }
+    spots = out; store.set("spots", spots);
+    toast(spots.length ? "وُجدت "+countAr(spots.length)+" مرشّحة" : "لم تُوجد نقاط، أضف نقاطك يدوياً");
+    renderSpots(); fillLogSpots();
+  }catch(e){
+    toast("تعذّر مسح الساحل الآن، حاول لاحقاً");
+  }
+  btn.disabled = false; btn.textContent = "إعادة مسح الساحل";
+}
+$("#btnScan").onclick = scanCoast;
+
+function spotScore(s){
+  const base = SCORED.length ? (curScored()?.score ?? 50) : 50;
+  return Math.round(clamp(base * (0.55 + 0.45*(TYPE_W[s.type]||0.7)) + (s.mine?3:0), 0, 100));
+}
+function curScored(){
+  const now = Date.now();
+  let best = null, d = Infinity;
+  SCORED.forEach(x=>{ const dd = Math.abs(x.row.t - now); if(dd<d){ d=dd; best=x; } });
+  return best;
+}
+function renderSpots(){
+  const all = [...mySpots, ...spots].map(s=>({...s, sc: spotScore(s)})).sort((a,b)=>b.sc-a.sc);
+  if(spotLayer){
+    spotLayer.clearLayers();
+    all.forEach(s=>{
+      L.circleMarker([s.lat,s.lng],{radius: s.mine?9:7, color:"#fff", weight:1, fillColor:scoreHex(s.sc), fillOpacity:.9})
+        .addTo(spotLayer).on("click", ()=>openSpot(s));
+    });
+  }
+  $("#spotsNote").style.display = all.length ? "none" : "block";
+  $("#spotList").innerHTML = all.slice(0,12).map(s=>`
+    <div class="spot" data-id="${s.id}">
+      <div class="dot" style="background:${scoreHex(s.sc)}">${s.sc}</div>
+      <div style="flex:1">
+        <div style="font-weight:700">${esc(s.name)}</div>
+        <div class="mute">${TYPE_AR[s.type]||""}${s.near?` · <span style="color:#ffb3b3">قرب ${s.near}، تحقّق من الوصول</span>`:""}</div>
+      </div>
+    </div>`).join("");
+  $$("#spotList .spot").forEach(el=>el.onclick=()=>{ const s = all.find(x=>x.id===el.dataset.id); if(map) map.setView([s.lat,s.lng],15); openSpot(s); });
+}
+function countAr(n){ return n===1?"نقطة واحدة": n===2?"نقطتان": (n>=3&&n<=10)? n+" نقاط" : n+" نقطة"; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+async function openSpot(s){
+  openModal(`<h2>${esc(s.name)}</h2><div class="mute">${TYPE_AR[s.type]||""} · جارٍ جلب ظروف هذه النقطة…</div>`);
+  let sc = SCORED;
+  try{
+    const rows = await fetchConditions(s.lat.toFixed(3), s.lng.toFixed(3));
+    sc = rows.map((r,i)=>factorsAt(rows,i,s.lat,s.lng));
+  }catch(e){}
+  const cur = (()=>{ let b=null,d=Infinity; sc.forEach(x=>{const dd=Math.abs(x.row.t-Date.now()); if(dd<d){d=dd;b=x;}}); return b; })();
+  const bw = bestWindow(sc);
+  const mult = 0.55 + 0.45*(TYPE_W[s.type]||0.7);
+  const nowS = cur ? Math.round(cur.score*mult) : "—";
+  const reasons = [];
+  if(s.type==="breakwater"||s.type==="groyne") reasons.push("الصخور تجمع صغار السمك وتؤوي المفترس، وأطراف الكاسر أفضل مواضعه");
+  if(s.type==="pier") reasons.push("ظلّ الرصيف وأعمدته مأوى للأسماك");
+  if(s.type==="reef") reasons.push("الشعاب والفشوت مراعٍ طبيعية للمفترس");
+  if(s.type==="cape") reasons.push("التيار يشتد حول رؤوس اليابسة ويجرف الطعم الطبيعي");
+  const rig = cur ? recommend(autoInputs(cur, s.type)) : null;
+  $("#modalBody").innerHTML = `
+    <h2>${esc(s.name)}</h2>
+    <div class="mute">${TYPE_AR[s.type]||""} · ${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</div>
+    ${s.near?`<div class="banner red" style="margin-top:8px">النقطة قريبة من ${s.near}. تأكّد من أن الوصول مسموح قبل الذهاب.</div>`:""}
+    <div class="row" style="justify-content:space-between;margin:12px 0">
+      <div><div class="mute">المؤشر الآن</div><div class="score" style="color:${scoreColor(nowS)}">${nowS}</div></div>
+      <div style="text-align:left"><div class="mute">أفضل وقت اليوم</div><div style="font-weight:800;font-size:18px">${bw?fmtH(bw.row.t):"—"}</div></div>
+    </div>
+    ${reasons.length?`<h3>لماذا رُشّحت؟</h3><ul>${reasons.map(r=>`<li>${r}</li>`).join("")}</ul>`:""}
+    ${cur?factorChips(cur):""}
+    ${rig?`<h3>التجهيزة المقترحة الآن</h3>${rigHtml(rig,true)}`:""}
+    <div class="row" style="margin-top:12px">
+      <a class="btn sec sm" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener" style="text-decoration:none">الاتجاهات</a>
+      ${s.mine?`<button class="btn sec sm" id="delSpot">حذف النقطة</button>`:""}
+    </div>`;
+  const d = $("#delSpot"); if(d) d.onclick = ()=>{ mySpots = mySpots.filter(x=>x.id!==s.id); store.set("myspots",mySpots); closeModal(); renderSpots(); fillLogSpots(); };
+}
+function factorChips(x){
+  const r = x.row;
+  const items = [
+    ["حركة الماء", r.tideState||"—"],
+    ["الريح", r.wind!=null? Math.round(r.wind)+" كم/س":"—"],
+    ["الموج", r.wave!=null? r.wave.toFixed(1)+" م":"—"],
+    ["حرارة الماء", r.sst!=null? Math.round(r.sst)+"°م":"—"],
+    ["القمر", moonName(x.moon)],
+    ["الغيوم", r.cloud!=null? r.cloud+"٪":"—"]
+  ];
+  return `<div>${items.map(i=>`<span class="chip">${i[0]}: ${i[1]}</span>`).join("")}</div>
+    <div style="margin-top:6px">${x.why.map(w=>`<span class="chip ${w[0]==="+"?"ok":"warn"}">${w[0]==="+"?"▲":"▼"} ${w[1]}</span>`).join("")}</div>`;
+}
+
+/* --- Overview card --- */
+function renderNow(){
+  if(!SCORED.length) return;
+  const cur = curScored();
+  $("#nowScore").textContent = cur.score;
+  $("#nowScore").style.color = scoreColor(cur.score);
+  const bw = bestWindow(SCORED);
+  $("#bestWin").textContent = bw ? fmtH(bw.row.t)+" – "+fmtH(new Date(bw.row.t.getTime()+2*36e5)) : "—";
+  const start = SCORED.findIndex(x=>x===cur);
+  const slice = SCORED.slice(Math.max(0,start-2), start+30);
+  $("#hours").innerHTML = slice.map(x=>`<div class="${x===cur?"now":""}" title="${fmtH(x.row.t)}: ${x.score}" style="height:${Math.max(6,x.score*0.7)}px;background:${scoreHex(x.score)}"></div>`).join("");
+  $("#hlabels").innerHTML = slice.map(x=>`<span>${x.row.t.getHours()%3===0?x.row.t.getHours():""}</span>`).join("");
+  $("#nowFactors").innerHTML = factorChips(cur) + (isBeg()?`<div class="mute" style="margin-top:8px">الأعمدة تمثّل الساعات القادمة: الأخضر وقت ممتاز، والأصفر متوسط، والأحمر ضعيف. والعمود المحاط بإطار أبيض هو الساعة الحالية.</div>`:"");
+}
+
+/* =========================================================
+   Lure / rig advisor
+   ========================================================= */
+const RIG = { clarity:"stained", light:"day", bottom:"sand", depth:"mid" };
+$$("#v-rig .seg").forEach(seg=>{
+  const k = seg.dataset.k;
+  seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    seg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); RIG[k]=b.dataset.v;
+  });
+});
+function setSeg(k,v){ RIG[k]=v; $$(`#v-rig .seg[data-k="${k}"] button`).forEach(b=>b.classList.toggle("on", b.dataset.v===v)); }
+function autoInputs(x, spotType){
+  const r = x.row;
+  return {
+    clarity: RIG.clarity,
+    light: r.lightK || "day",
+    bottom: spotType==="breakwater"||spotType==="groyne"||spotType==="reef" ? "rocks" : RIG.bottom,
+    depth: RIG.depth,
+    wind: r.wind ?? 12, wave: r.wave ?? 0.4, sst: r.sst ?? 25
+  };
+}
+function recommend(c){
+  const out = { lure:"", why:[], color:"", weight:"", retrieve:"", main:"", leader:"", knots:[] , alt:"" };
+  // Lure type
+  if(c.light==="night"){
+    out.lure = "منو عائم أو سوفت بيت داكن";
+    out.why.push("في الليل يرى المفترس ظلّ الطعم على السطح، فالشكل الداكن أوضح له");
+  } else if(c.light==="low" && c.wind<20 && c.wave<0.8 && c.depth!=="deep"){
+    out.lure = "طعم سطحي (بوبر أو ستكبيت)";
+    out.alt = "إن لم تأتِ ضربات خلال 20 دقيقة، انتقل إلى منو غاطس";
+    out.why.push("في الضوء الخافت يطارد المفترس صغار السمك عند السطح، والضربة السطحية أمتع ما في الصيد");
+  } else if(c.wind>20 || c.depth==="deep"){
+    out.lure = "جك معدني للرمي";
+    out.alt = "سوفت بيت ثقيل الرأس للقاع";
+    out.why.push(c.wind>20 ? "الجك ثقيل ونحيف فيشقّ الريح ويصل بعيداً" : "الجك يغوص بسرعة إلى العمق حيث يقف السمك");
+  } else if(c.bottom==="grass" || (c.bottom==="rocks" && c.depth==="shallow")){
+    out.lure = "سوفت بيت بكلّاب مخفي (Weedless)";
+    out.alt = "منو عائم يُسحب فوق الصخور";
+    out.why.push("الكلّاب المخفي لا يعلق في الأعشاب والصخور، فتقلّ خسارة الطُّعوم");
+  } else if(c.light==="day" && c.clarity==="clear"){
+    out.lure = "سوفت بيت بذيل متحرّك (Paddle tail) على رأس رصاص";
+    out.alt = "منو غاطس بألوان طبيعية";
+    out.why.push("في الماء الصافي والشمس القوية يحتاج السمك طعماً واقعي الحركة");
+  } else {
+    out.lure = "منو غاطس (Sinking minnow)";
+    out.alt = "سوفت بيت بذيل متحرّك";
+    out.why.push("منو غاطس طعم متعدّد الاستعمال يغطي طبقات الماء المتوسطة");
+  }
+  // Color
+  if(c.light==="night") out.color = "أسود أو بنفسجي، أو لون متوهّج";
+  else if(c.clarity==="clear") out.color = c.light==="day" ? "ألوان طبيعية: فضي، أزرق وأبيض، شفاف" : "أبيض لؤلؤي أو فضي لامع";
+  else if(c.clarity==="stained") out.color = "أبيض، أو شارتروز مع أبيض، أو وردي";
+  else out.color = "شارتروز أو برتقالي فاقع، أو أسود لظلّ واضح. ويُفضّل طعم بخشخيشة (Rattle)";
+  // Weight
+  const w = c.wind;
+  if(out.lure.includes("جك")) out.weight = w>25 ? "30–40 غرام" : w>15 ? "20–30 غرام" : "15–20 غرام";
+  else if(out.lure.includes("سوفت")) out.weight = c.depth==="deep" ? "رأس 14–21 غرام" : c.depth==="shallow" ? "رأس 5–7 غرامات" : "رأس 7–14 غرام";
+  else out.weight = w>20 ? "طعم 15–25 غرام (الأثقل يُرمى أبعد)" : "طعم 9–15 غرام";
+  // Retrieve
+  if(c.sst<20) out.retrieve = "سحب بطيء مع توقّفات طويلة، فالسمك كسول في الماء البارد";
+  else if(c.sst>30) out.retrieve = "سحب سريع ومتقطّع في الفجر، ثم أعمق وأبطأ مع ارتفاع الشمس";
+  else out.retrieve = out.lure.includes("سطحي") ? "نترات قصيرة بطرف القصبة مع توقّف ثانية، والضربة غالباً تأتي في التوقّف"
+                   : out.lure.includes("جك") ? "ارمِ واتركه يصل القاع، ثم ارفعه بقوة ودعه يسقط، وكرّر"
+                   : "سحب متوسط ثابت، مع نترة خفيفة كل بضع لفّات";
+  // Line
+  const rocky = c.bottom==="rocks";
+  out.main = "خيط مضفّر PE رقم 1 إلى 1.5 (قوة 20–30 رطلاً)";
+  out.leader = rocky ? "فلوروكربون 40–50 رطلاً، بطول 1.5–2 متر لمقاومة احتكاك الصخور" : "فلوروكربون 25–30 رطلاً، بطول متر إلى متر ونصف";
+  if(c.clarity==="clear" && !rocky) out.leader = "فلوروكربون 20–25 رطلاً (أنحف لأن الماء صافٍ)، بطول متر ونصف";
+  out.knots = ["fg", out.lure.includes("جك") ? "palomar" : "loop"];
+  out.kanad = true;
+  return out;
+}
+function rigHtml(r, compact){
+  const knotLinks = r.knots.map(k=>`<a href="#" data-knot="${k}" style="color:var(--acc)">${KNOTS[k].name}</a>`).join(" + ");
+  return `<div class="rec">
+    <b>الطعم</b><span>${r.lure}</span>
+    <b>اللون</b><span>${r.color}</span>
+    <b>الوزن</b><span>${r.weight}</span>
+    <b>السحب</b><span>${r.retrieve}</span>
+    <b>الخيط</b><span>${r.main}</span>
+    <b>القائد</b><span>${r.leader}</span>
+    <b>العُقد</b><span>${knotLinks}</span>
+    ${r.alt?`<b>البديل</b><span>${r.alt}</span>`:""}
+  </div>
+  ${!compact || isBeg() ? `<div class="mute" style="margin-top:8px">لماذا؟ ${r.why.join("، ")}.</div>`:""}
+  ${isBeg()?`<div class="mute" style="margin-top:6px">إن كنت تستهدف الكنعد أو الباراكودا فأسنانهما تقطع الفلوروكربون؛ استعمل سلكاً معدنياً قصيراً (Wire) قبل الطعم.</div>`:""}`;
+}
+document.addEventListener("click", e=>{
+  const a = e.target.closest("[data-knot]"); if(!a) return;
+  e.preventDefault(); openModal(knotHtml(a.dataset.knot));
+});
+$("#btnRig").onclick = ()=>{
+  const c = {...RIG, wind:+$("#inWind").value||0, wave:+$("#inWave").value||0, sst:+$("#inSst").value||25};
+  $("#rigOut").innerHTML = `<div class="card"><h2>تجهيزتك</h2>${rigHtml(recommend(c))}</div>`;
+};
+$("#btnRigAuto").onclick = ()=>{
+  const cur = curScored(); if(!cur){ toast("بيانات البحر غير متوفرة الآن"); return; }
+  const r = cur.row;
+  if(r.wind!=null) $("#inWind").value = Math.round(r.wind);
+  if(r.wave!=null) $("#inWave").value = r.wave.toFixed(1);
+  if(r.sst!=null) $("#inSst").value = Math.round(r.sst);
+  if(r.lightK) setSeg("light", r.lightK);
+  toast("مُلئت من بيانات البحر الحالية");
+};
+
+/* =========================================================
+   Knots
+   ========================================================= */
+const KNOTS = {
+  fg:{ name:"عقدة FG", use:"لوصل الخيط المضفّر بالقائد الفلوروكربون. أقوى وصلة وأنحفها، وتمرّ من حلقات القصبة بسلاسة فلا تعيق الرمي البعيد.", level:"متوسطة",
+    steps:[
+      "شدّ الخيط المضفّر الخارج من البكرة شدّاً جيداً (اقفل الفرامل وثبّت القصبة، أو أمسك المضفّر بأسنانك).",
+      "ضع القائد فوق المضفّر بزاوية مائلة، وأمسكه بيدك الأخرى.",
+      "لُفّ المضفّر حول القائد بالتناوب: لفّة من فوقه ثم لفّة من تحته، بحيث تتشابك اللفّات على شكل ضفيرة. كرّر نحو 20 لفّة.",
+      "ثبّت اللفّات مؤقتاً بعقدة نصفية واحدة بالمضفّر حول القائد.",
+      "بلّل اللفّات بالماء، ثم اشدد القائد والمضفّر في اتجاهين متعاكسين بقوة متزايدة حتى تقبض اللفّات على القائد ويتغير لونها.",
+      "اعقد 6 إلى 8 عقد نصفية متتالية بالمضفّر حول القائد والمضفّر معاً، متناوبة الاتجاه.",
+      "اقطع طرف القائد الزائد قريباً من العقدة، ثم اعقد عقدتين أو ثلاثاً حول المضفّر وحده، واقطع الطرف."
+    ],
+    tip:"إن كانت صعبة عليك في البداية فاستعمل عقدة Double Uni، فهي أسهل وتكفي للصيد من الشاطئ." },
+  dbluni:{ name:"عقدة Double Uni", use:"بديل أسهل للـFG لوصل المضفّر بالقائد. أضخم قليلاً لكنها قوية ويمكن ربطها بسرعة حتى في الريح.", level:"سهلة",
+    steps:[
+      "ضع طرف المضفّر وطرف القائد متوازيين ومتداخلين بطول 20 سم تقريباً، في اتجاهين متعاكسين.",
+      "بطرف القائد كوّن حلقة فوق الخيطين، ثم لُفّه داخل الحلقة حول الخيطين 4 إلى 5 لفّات، واشدده قليلاً.",
+      "بطرف المضفّر افعل الشيء نفسه من الجهة الأخرى، لكن بعدد لفّات أكبر: 8 إلى 10 لفّات، لأن المضفّر زلق.",
+      "بلّل العقدتين، ثم اسحب الخيطين الرئيسيين في اتجاهين متعاكسين فتنزلق العقدتان وتلتقيان.",
+      "شدّ بقوة، ثم اقطع الطرفين الزائدين."
+    ], tip:"عدد اللفّات على المضفّر هو سرّ قوتها؛ لا تقلّل منه." },
+  palomar:{ name:"عقدة Palomar", use:"لربط الجك أو الكلّاب أو المشبك (السنب) بالقائد. من أقوى العقد وأسهلها.", level:"سهلة",
+    steps:[
+      "اثنِ آخر 15 سم من القائد لتصنع خيطاً مزدوجاً.",
+      "أدخل الحلقة المزدوجة في عين الطعم.",
+      "اعقد عقدة بسيطة عادية بالخيط المزدوج، واترك الطعم معلّقاً في الأسفل دون أن تشدّ.",
+      "مرّر الطعم كله من داخل الحلقة.",
+      "بلّل العقدة، ثم اسحب الخيط الرئيسي والطرف معاً حتى تنقبض العقدة فوق العين، واقطع الطرف."
+    ], tip:"مع الطُّعوم الكبيرة يصعب تمريرها من الحلقة، فاجعل الحلقة أطول." },
+  loop:{ name:"العقدة الحلقية (Non-Slip Loop)", use:"تربط الطعم بحلقة حرّة لا تنقبض على عينه، فيتحرك الطعم بحرية أكبر. مهمة جداً مع المنو والطعم السطحي والسوفت بيت.", level:"متوسطة",
+    steps:[
+      "اعقد عقدة بسيطة رخوة في القائد على بعد 10 سم تقريباً من طرفه، ولا تشدّها.",
+      "أدخل الطرف في عين الطعم، ثم أعده من داخل العقدة البسيطة من الجهة نفسها التي خرج منها.",
+      "لُفّ الطرف حول الخيط الرئيسي: 4 لفّات للقائد من 15 إلى 40 رطلاً، و3 لفّات للأثخن.",
+      "أعد الطرف إلى داخل العقدة البسيطة من الجهة نفسها التي خرج منها أول مرة.",
+      "بلّل العقدة، واسحب الخيط الرئيسي ببطء حتى تنقبض اللفّات، ثم اسحب الطرف لإحكامها، واقطعه."
+    ], tip:"حجم الحلقة يتحدد بموضع العقدة البسيطة؛ حلقة صغيرة بقطر 3–5 مم تكفي." },
+  clinch:{ name:"عقدة Improved Clinch", use:"عقدة كلاسيكية لربط الكلّاب أو الطعم بالخيط النايلون أو الفلوروكربون الرفيع. لا تُستعمل مع المضفّر لأنه ينزلق منها.", level:"سهلة",
+    steps:[
+      "أدخل طرف الخيط في عين الكلّاب واسحب منه 15 سم تقريباً.",
+      "لُفّ الطرف حول الخيط الرئيسي 5 إلى 7 لفّات (لفّات أقل كلما كان الخيط أثخن).",
+      "أدخل الطرف في الحلقة الصغيرة المتكوّنة قرب العين.",
+      "ثم أعد الطرف من داخل الحلقة الكبيرة التي تكوّنت للتو.",
+      "بلّل العقدة، واسحب الخيط الرئيسي حتى تنقبض، ثم اقطع الطرف."
+    ], tip:"مع القائد الثخين فوق 30 رطلاً تصعب هذه العقدة؛ استعمل Palomar أو العقدة الحلقية." }
+};
+function knotDiagram(k){
+  // simple original schematic: two lines + wraps
+  const wraps = {fg:14, dbluni:8, palomar:3, loop:4, clinch:6}[k]||5;
+  let w = ""; for(let i=0;i<wraps;i++){ const x = 70 + i*(100/wraps); w += `<ellipse cx="${x}" cy="40" rx="${50/wraps+2}" ry="10" fill="none" stroke="#ffb347" stroke-width="2"/>`; }
+  const eye = (k==="palomar"||k==="loop"||k==="clinch") ? `<circle cx="215" cy="40" r="9" fill="none" stroke="#8fa8bf" stroke-width="3"/><path d="M224 40h20" stroke="#8fa8bf" stroke-width="4"/>` : `<path d="M180 40h70" stroke="#2ec4b6" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 260 80" style="width:100%;background:#0b1f33;border-radius:10px;margin:8px 0">
+    <path d="M10 40h170" stroke="${k==="fg"||k==="dbluni"?"#e8f1f8":"#2ec4b6"}" stroke-width="3"/>${w}${eye}
+    <text x="250" y="72" text-anchor="end" fill="#8fa8bf" font-size="10" font-family="Tajawal">رسم تخطيطي</text></svg>`;
+}
+function knotHtml(k){
+  const n = KNOTS[k];
+  return `<h2>${n.name}</h2><span class="chip">الصعوبة: ${n.level}</span>
+    <p>${n.use}</p>${knotDiagram(k)}
+    <ol class="steps">${n.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+    <div class="banner">💡 ${n.tip}</div>
+    <div class="mute">قاعدة لكل العقد: بلّل العقدة قبل الشدّ النهائي، فالاحتكاك الجاف يحرق الخيط ويضعفه.</div>`;
+}
+
+/* =========================================================
+   Lessons & glossary
+   ========================================================= */
+const LESSONS = [
+  {t:"قراءة البحر في دقيقتين", b:[
+    "ابحث عن الطيور التي تغوص في الماء، فتحتها غالباً صغار سمك يطاردها مفترس.",
+    "صغار السمك القافزة على السطح أو المتجمعة عند الشاطئ علامة ممتازة.",
+    "الخط الفاصل بين ماء صافٍ وماء عكر مكان صيد ممتاز، لأن المفترس يكمن في العكر ويهاجم في الصافي.",
+    "خطوط الرغوة والأعشاب الطافية تدلّ على مسار التيار، وهو مسار الطعام.",
+    "الماء الأغمق لوناً قرب الشاطئ يعني عمقاً أكبر؛ ارمِ عليه."]},
+  {t:"اختيار الموضع على الكاسر", b:[
+    "طرف الكاسر (رأسه) أفضل موضع، لأن التيار يلتفّ حوله.",
+    "الزاوية التي يلتقي فيها الكاسر بالشاطئ تحبس صغار السمك.",
+    "ارمِ موازياً للصخور لا بعيداً عنها فقط، فالسمك يقف ملاصقاً لها.",
+    "إن لم تأتِ ضربات خلال 20–30 دقيقة، تحرّك 50 متراً. الصياد بالطعم الصناعي يبحث ولا ينتظر."]},
+  {t:"الرمي البعيد", b:[
+    "املأ البكرة حتى أقل من حافتها بنحو 2 مم؛ البكرة الناقصة تقصّر الرمية.",
+    "اختر وزن طعم ضمن المدى المكتوب على القصبة.",
+    "اجعل الخيط المتدلّي من طرف القصبة بطول 50–80 سم قبل الرمي.",
+    "ارمِ بتسارع ناعم متصاعد، لا بضربة عنيفة مفاجئة.",
+    "الرمي مع الريح يزيد المسافة، والرمي ضدها يحتاج طعماً أثقل وأنحف."]},
+  {t:"تجنّب تشابك المضفّر", b:[
+    "قبل أن يلمس الطعم الماء، ضع إصبعك على الخيط عند البكرة لتبطئه.",
+    "أغلق ذراع البكرة بيدك لا بتدوير المقبض.",
+    "شدّ الخيط المرتخي قبل أن تبدأ السحب.",
+    "في الريح الجانبية، اخفض طرف القصبة قريباً من الماء أثناء السحب."]},
+  {t:"التعامل مع السمكة عند الصخور", b:[
+    "اضبط الفرامل (الدراغ) على ربع إلى ثلث قوة الخيط تقريباً.",
+    "عند الضربة قرب الصخور، اشدد بثبات وأبعد رأس السمكة عن الصخر في الثواني الأولى.",
+    "لا تحاول رفع سمكة كبيرة بالقصبة فوق الكاسر؛ استعمل شبكة بيد طويلة أو انزل بحذر إلى نقطة منخفضة.",
+    "استعمل ملقطاً لإخراج الكلّاب، ولا تضع يدك قرب أسنان الكنعد والباراكودا."]},
+  {t:"السلامة على الصخور والكاسرات", danger:true, b:[
+    "الصخور الخضراء المبتلة زلقة جداً؛ البس حذاءً بنعل مانع للانزلاق.",
+    "لا تُدِر ظهرك للبحر، وانتبه للموجات المفاجئة من السفن العابرة.",
+    "اعرف وقت المدّ؛ بعض الكاسرات والفشوت ينقطع طريق العودة منها مع ارتفاع الماء.",
+    "لا تصطد وحدك في الليل، وأخبر أحداً بمكانك.",
+    "لا تمشِ حافياً في الماء الضحل: الراي والسمكة الحجرية تختبئ في القاع.",
+    "إن علقت حيّة بحر في الطعم فلا تلمسها أبداً؛ اقطع الخيط."]},
+  {t:"الأنظمة والصيد المسؤول", b:[
+    "في البحرين يُمنع صيد الصافي والشعري والعندق في شهري أبريل ومايو من كل عام.",
+    "للكنعد فترة منع أو تقييد سنوية من 15 أغسطس إلى 15 أكتوبر، وتتغيّر تفاصيلها من سنة لأخرى؛ تحقّق من قرار المجلس الأعلى للبيئة.",
+    "يُحظر صيد صغار الأسماك والقشريات لعدد من الأنواع؛ أطلق الصغير برفق.",
+    "عند الإطلاق: بلّل يديك، ولا تضغط على بطن السمكة، وأعدها إلى الماء بسرعة."]}
+];
+const GLOSSARY = [
+  ["المضفّر (PE / Braid)","خيط مجدول من ألياف رفيعة؛ قوي جداً مع قطر صغير، ولا يتمدّد، فيُحسّ بالضربة فوراً."],
+  ["القائد (Leader)","قطعة من الفلوروكربون أو النايلون تُوصل بين المضفّر والطعم؛ تقاوم الاحتكاك وأقل ظهوراً في الماء."],
+  ["الفلوروكربون","خيط يكاد لا يُرى في الماء ويقاوم احتكاك الصخور؛ هو المفضّل للقائد."],
+  ["الدراغ (الفرامل)","نظام في البكرة يسمح للسمكة بسحب الخيط عند قوة معيّنة حتى لا ينقطع."],
+  ["المنو (Minnow)","طعم صلب على شكل سمكة صغيرة؛ منه العائم والغاطس."],
+  ["الجك (Jig)","قطعة معدنية ثقيلة تُرمى بعيداً وتغوص بسرعة."],
+  ["السوفت بيت (Soft bait)","طعم مطاطي ليّن يُركّب على رأس رصاص بكلّاب."],
+  ["البوبر والستكبيت","طُعوم سطحية: البوبر يُحدث فقاعات وصوتاً، والستكبيت يتمايل يميناً ويساراً على السطح."],
+  ["الرطل (lb)","وحدة قوة الخيط؛ الرطل نحو 0.45 كغم."],
+  ["المدّ والجزر","ارتفاع ماء البحر وانخفاضه مرتين تقريباً كل يوم بسبب جاذبية القمر والشمس."],
+  ["الركود","فترة قصيرة عند ذروة المدّ أو الجزر يكاد الماء فيها لا يتحرك؛ الصيد فيها أضعف عادةً."],
+  ["الكاسر","حاجز صخري يُبنى في البحر لكسر الأمواج؛ من أفضل أماكن الصيد بالطعم الصناعي."],
+  ["الفشت","منطقة شعاب ضحلة في البحر."]
+];
+function tipOfDay(){
+  const cur = curScored(); if(!cur) return "";
+  const r = cur.row, tips = [];
+  if(r.tideState && r.tideState.startsWith("مدّ")) tips.push("الماء يرتفع الآن: المفترس يتبع المدّ نحو الشاطئ، فركّز على الماء القريب.");
+  if(r.tideState && r.tideState.startsWith("ركود")) tips.push("الماء راكد الآن: هذا وقت مناسب لتجهيز العُقد وتغيير القائد استعداداً للحركة القادمة.");
+  if((r.wind??0)>20) tips.push("الريح قوية اليوم: استعمل جكّاً أثقل، وارمِ مع الريح إن استطعت.");
+  if(r.sst!=null && r.sst<22) tips.push("الماء يبرد: أبطئ السحب وأطِل التوقّف، فالسمك أبطأ في الشتاء.");
+  if(r.lightK==="low") tips.push("هذا وقت الضوء الخافت: جرّب الطعم السطحي الآن.");
+  if(!tips.length) tips.push("ابدأ بالرمي على شكل مروحة: يميناً ثم الوسط ثم يساراً، قبل أن تنتقل إلى موضع جديد.");
+  return `<div class="card" style="border-color:var(--acc)"><div class="mute">نصيحة الآن</div><div style="font-weight:700">${tips[0]}</div></div>`;
+}
+let learnTab = "knots";
+$$("#learnTabs button").forEach(b=>b.onclick=()=>{ $$("#learnTabs button").forEach(x=>x.classList.toggle("on",x===b)); learnTab=b.dataset.v; renderLearn(); });
+function renderLearn(){
+  $("#tipCard").innerHTML = tipOfDay();
+  if(learnTab==="knots"){
+    $("#learnOut").innerHTML = (isBeg()?`<div class="banner">ابدأ بعقدتين فقط: <b>Double Uni</b> لوصل المضفّر بالقائد، و<b>Palomar</b> لربط الطعم. تدرّب عليهما في البيت قبل الرحلة.</div>`:"") +
+      Object.keys(KNOTS).map(k=>`<div class="card" data-knot="${k}" style="cursor:pointer"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${KNOTS[k].name}</h2><span class="chip">${KNOTS[k].level}</span></div><div class="mute">${KNOTS[k].use}</div></div>`).join("");
+  } else if(learnTab==="lessons"){
+    $("#learnOut").innerHTML = LESSONS.map(l=>`<div class="card" ${l.danger?'style="border-color:var(--danger)"':""}><h2>${l.t}</h2><ul>${l.b.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("");
+  } else {
+    $("#learnOut").innerHTML = `<div class="card"><table class="t">${GLOSSARY.map(g=>`<tr><th style="white-space:nowrap;color:var(--acc2)">${g[0]}</th><td>${g[1]}</td></tr>`).join("")}</table></div>`;
+  }
+}
+
+/* =========================================================
+   Fish guide
+   ========================================================= */
+const FISH = [
+  { id:"hamour", ar:"الهامور", en:"Orange-spotted grouper", sci:"Epinephelus coioides", tags:["lure"],
+    draw:{shape:"stout", base:"#8a6a45", belly:"#c9a77c", pattern:"spots", pc:"#d9772b", tail:"round", fins:"#6d5235", mouth:"big"},
+    id_:"جسم ممتلئ بنّي، تغطيه بقع برتقالية أو بنية صغيرة، وفم كبير جداً، وذيل مستدير.",
+    where:"بين الصخور والكاسرات والشعاب. يكمن في الشقوق وينقضّ على ما يمرّ أمامه.",
+    lure:"سوفت بيت أو جك يُسحب قريباً من القاع بجوار الصخور.",
+    warn:"يهرب فوراً إلى الشقوق بعد الضربة، فاستعمل قائداً قوياً واشدد بسرعة. حواف غطاء خياشيمه حادة. ومخزونه في الخليج متراجع، فأطلق الصغير." },
+  { id:"kanad", ar:"الكنعد", en:"Kingfish / Spanish mackerel", sci:"Scomberomorus commerson", tags:["lure","ban"], ban:{from:[8,15], to:[10,15], text:"فترة منع أو تقييد سنوية من 15 أغسطس إلى 15 أكتوبر (تحقّق من تفاصيل قرار السنة)"},
+    draw:{shape:"long", base:"#4d6f8c", belly:"#dfe8ef", pattern:"wavybars", pc:"#2f4d66", tail:"fork", fins:"#3b566e"},
+    id_:"جسم طويل انسيابي فضي مزرقّ، عليه خطوط عمودية متموّجة رفيعة، وذيل هلالي مشقوق، وأسنان حادة كالشفرة.",
+    where:"يتنقّل في الماء المفتوح ويقترب من رؤوس الكاسرات والأرصفة وراء أسراب السردين.",
+    lure:"جك معدني سريع، أو منو غاطس يُسحب بسرعة.",
+    warn:"أسنانه تقطع الخيط بسهولة: استعمل سلكاً معدنياً قصيراً. لا تضع يدك قرب فمه أبداً." },
+  { id:"jesh", ar:"الجش", en:"Trevally", sci:"Caranx / Carangoides spp.", tags:["lure"],
+    draw:{shape:"deep", base:"#9fb4c2", belly:"#e9eef2", pattern:"none", pc:"", tail:"fork", fins:"#d6b44a", scutes:true},
+    id_:"جسم عريض مضغوط من الجانبين، فضي أو ذهبي، وذيل مشقوق بعمق، وصفائح عظمية حادة على جانب الذيل.",
+    where:"يطارد صغار السمك قرب رؤوس الكاسرات والقنوات ومناطق التيار.",
+    lure:"بوبر في الفجر، وجك معدني في النهار.",
+    warn:"من أقوى الأسماك مقاومة، فاضبط الدراغ جيداً. والصفائح الحادة على ذيله قد تجرح اليد." },
+  { id:"queen", ar:"سمكة الملكة", en:"Queenfish", sci:"Scomberoides commersonnianus", tags:["lure","danger"],
+    draw:{shape:"long", base:"#9fb0bd", belly:"#f0f3f5", pattern:"blotches", pc:"#3b4c5a", tail:"fork", fins:"#c9b25a", spines:true},
+    id_:"جسم فضي طويل مضغوط، عليه صف من البقع الداكنة على الجانب، وذيل مشقوق. تقفز كثيراً عند اصطيادها.",
+    where:"قرب الشاطئ والكاسرات، وتطارد صغار السمك عند السطح.",
+    lure:"ستكبيت أو بوبر، ومنو سريع.",
+    warn:"أشواك ظهرها وزعنفتها الشرجية سامّة ولسعتها مؤلمة. أمسكها بقطعة قماش أو بملقط الشفة." },
+  { id:"shaari", ar:"الشعري", en:"Spangled emperor", sci:"Lethrinus nebulosus", tags:["lure","ban"], ban:{from:[4,1], to:[5,31], text:"ممنوع صيده في البحرين خلال أبريل ومايو"},
+    draw:{shape:"oval", base:"#a59a62", belly:"#e7dfb8", pattern:"bluedots", pc:"#5fa8e0", tail:"fork", fins:"#b8a46a", face:true},
+    id_:"جسم زيتوني مصفرّ، على قشوره نقاط زرقاء صغيرة، وخطوط زرقاء على الخدّ تحت العين، وخطم مدبّب.",
+    where:"فوق الرمل والأعشاب البحرية قرب الصخور.",
+    lure:"سوفت بيت صغير يُسحب ببطء قرب القاع، ومنو صغير.",
+    warn:"ممنوع صيده في أبريل ومايو؛ أطلقه إن اصطدته في هذين الشهرين." },
+  { id:"safi", ar:"الصافي", en:"Rabbitfish", sci:"Siganus spp.", tags:["danger","ban"], ban:{from:[4,1], to:[5,31], text:"ممنوع صيده في البحرين خلال أبريل ومايو"},
+    draw:{shape:"oval", base:"#8f8a6e", belly:"#c9c4a6", pattern:"finespots", pc:"#e8e2c4", tail:"truncate", fins:"#7d785e", spines:true, mouth:"small"},
+    id_:"جسم بيضاوي مضغوط، رمادي أو زيتوني تغطيه نقاط فاتحة صغيرة، وفم صغير جداً.",
+    where:"فوق الأعشاب البحرية والصخور الضحلة؛ يتغذّى على الطحالب، فنادراً ما يضرب الطعم الصناعي.",
+    lure:"لا يُستهدف بالطعم الصناعي عادةً.",
+    warn:"أشواك ظهره وبطنه وزعنفته الشرجية سامّة ولسعتها مؤلمة جداً. لا تمسكه بيدك العارية. وصيده ممنوع في أبريل ومايو." },
+  { id:"sobaity", ar:"السبيطي", en:"Sobaity seabream", sci:"Sparidentex hasta", tags:["lure"],
+    draw:{shape:"oval", base:"#a9b3ba", belly:"#eef1f3", pattern:"none", pc:"", tail:"fork", fins:"#8e9aa2"},
+    id_:"جسم فضي ناصع مضغوط، ورأس مائل منحدر، وذيل مشقوق.",
+    where:"قرب الشواطئ الرملية والصخرية، ويكثر في الشتاء.",
+    lure:"سوفت بيت صغير ومنو صغير يُسحبان ببطء.",
+    warn:"لا مخاطر خاصة. أطلق الصغير منه." },
+  { id:"faskar", ar:"الفسكر", en:"Twobar seabream", sci:"Acanthopagrus bifasciatus", tags:["lure"],
+    draw:{shape:"oval", base:"#b9c1c6", belly:"#eef1f3", pattern:"headbars", pc:"#1d2328", tail:"fork", fins:"#e3c43a"},
+    id_:"جسم فضي، وعلى رأسه شريطان عموديان أسودان واضحان، وزعانف صفراء.",
+    where:"ملاصق للكاسرات والصخور والأرصفة.",
+    lure:"سوفت بيت صغير يقلّد الروبيان أو السرطان، يُسحب بين الصخور.",
+    warn:"أشواك ظهره قوية وحادة؛ أمسكه من تحت البطن." },
+  { id:"barracuda", ar:"الباراكودا", en:"Barracuda", sci:"Sphyraena spp.", tags:["lure","danger"],
+    draw:{shape:"vlong", base:"#7f8e98", belly:"#e3e8eb", pattern:"chevrons", pc:"#4b5963", tail:"fork", fins:"#5d6b74", mouth:"teeth"},
+    id_:"جسم طويل كالسهم، فك سفلي بارز، وأسنان كبيرة ظاهرة، وخطوط مائلة داكنة على الظهر.",
+    where:"عند رؤوس الكاسرات والقنوات، ويهاجم الطُّعوم السريعة.",
+    lure:"منو طويل سريع، وجك معدني.",
+    warn:"أسنانه تجرح بشدة وتقطع الخيط: استعمل سلكاً معدنياً، ولا تقرّب يدك من فمه، وأخرج الكلّاب بملقط طويل." },
+  { id:"catfish", ar:"سمك القط البحري", en:"Marine catfish", sci:"Ariidae", tags:["danger"],
+    draw:{shape:"cat", base:"#6f7a80", belly:"#c9d0d4", pattern:"none", pc:"", tail:"fork", fins:"#5a646a", spines:true, barbels:true},
+    id_:"رأس مفلطح، وشوارب حول الفم، وجلد أملس بلا قشور، وشوكة قوية في الظهر وفي كل زعنفة صدرية.",
+    where:"القاع الرملي والطيني، ويكثر قرب المصبّات والموانئ.",
+    lure:"قد يضرب السوفت بيت المسحوب على القاع.",
+    warn:"أشواكه مسنّنة وسامّة، وجرحها مؤلم وقد يلتهب. ثبّته بقماش أو اقطع الخيط قرب فمه إن لم تستطع إخراج الكلّاب بأمان." },
+  { id:"stingray", ar:"الراي اللاسع (اللخمة)", en:"Stingray", sci:"Dasyatidae", tags:["danger"],
+    draw:{shape:"ray", base:"#8a7b62", belly:"#d8ccb4", pattern:"spots", pc:"#5a8fd0"},
+    id_:"جسم مفلطح على شكل قرص، وذيل طويل في قاعدته شوكة مسنّنة سامّة.",
+    where:"يدفن نفسه في الرمل في الماء الضحل.",
+    lure:"لا يُستهدف، لكنه قد يعلق في الطعم المسحوب على القاع.",
+    warn:"لسعة شوكة الذيل خطيرة ومؤلمة جداً. امشِ في الماء الضحل بجرّ قدميك على الرمل لتنبّهه فيبتعد، ولا تقترب من ذيله أبداً." },
+  { id:"stonefish", ar:"السمكة الحجرية", en:"Stonefish", sci:"Synanceia verrucosa", tags:["danger"],
+    draw:{shape:"stone", base:"#6e5f4e", belly:"#8b7a63", pattern:"blotches", pc:"#4a3f33"},
+    id_:"تشبه حجراً مغطّى بالطحالب تماماً، رأسها كبير وفمها متجه للأعلى، ولا تتحرك حتى لو اقتربت منها.",
+    where:"بين الصخور الضحلة والشعاب. نادرة في الخليج لكنها سُجّلت على سواحل البحرين.",
+    lure:"لا تُستهدف.",
+    warn:"أخطر الأسماك السامّة في العالم: أشواك ظهرها تخترق النعل الرقيق. لا تمشِ حافياً بين الصخور الضحلة أبداً، وعند اللسع اذهب للطوارئ فوراً." },
+  { id:"seasnake", ar:"حيّة البحر", en:"Sea snake", sci:"Hydrophiinae", tags:["danger"],
+    draw:{shape:"snake", base:"#c9b53a", belly:"#c9b53a", pattern:"bands", pc:"#2a3a44"},
+    id_:"ليست سمكة: حيّة ذات ذيل مفلطح كالمجداف، وجسم مخطّط غالباً بحلقات داكنة.",
+    where:"تسبح في مياه الخليج، وقد تقترب من الشاطئ أو تعلق في الخيط.",
+    lure:"—",
+    warn:"سمّها شديد جداً. إن علقت في طعمك فلا تلمسها ولا تحاول إخراج الكلّاب: اقطع الخيط فوراً." }
+];
+
+function fishSVG(d){
+  const id = "c"+Math.random().toString(36).slice(2,8);
+  if(d.shape==="ray"){
+    let spots=""; for(let i=0;i<10;i++){ spots+=`<circle cx="${70+((i*37)%70)}" cy="${30+((i*23)%40)}" r="3" fill="${d.pc}"/>`; }
+    return `<svg viewBox="0 0 200 100"><path d="M100 18 C150 22 175 45 175 52 C175 58 150 80 100 84 C50 80 25 58 25 52 C25 45 50 22 100 18Z" fill="${d.base}"/>${spots}<path d="M100 84 Q110 92 120 97" stroke="${d.base}" stroke-width="3" fill="none"/><path d="M104 88l6-2" stroke="#ff5d5d" stroke-width="2"/><circle cx="90" cy="40" r="2.5" fill="#111"/><circle cx="110" cy="40" r="2.5" fill="#111"/></svg>`;
+  }
+  if(d.shape==="snake"){
+    let bands=""; for(let i=0;i<9;i++) bands+=`<rect x="${30+i*16}" y="0" width="7" height="100" fill="${d.pc}"/>`;
+    return `<svg viewBox="0 0 200 100"><defs><clipPath id="${id}"><path d="M20 50 C45 30 70 70 95 50 S145 30 165 50 L185 42 L185 66 L165 58 C145 40 120 80 95 60 S45 40 22 58 Z"/></clipPath></defs><g clip-path="url(#${id})"><rect width="200" height="100" fill="${d.base}"/>${bands}</g><circle cx="27" cy="52" r="2" fill="#111"/></svg>`;
+  }
+  if(d.shape==="stone"){
+    return `<svg viewBox="0 0 200 100"><path d="M30 65 C25 40 60 25 100 28 C140 30 170 45 168 62 C166 78 130 82 95 80 C60 82 34 80 30 65Z" fill="${d.base}"/>
+      <circle cx="70" cy="45" r="9" fill="${d.pc}"/><circle cx="120" cy="50" r="12" fill="${d.pc}"/><circle cx="95" cy="66" r="7" fill="${d.pc}"/><circle cx="145" cy="60" r="6" fill="${d.pc}"/>
+      <path d="M60 30 l4-10 l4 9 l5-11 l4 11 l5-10 l4 10 l5-9 l3 10" stroke="#ff5d5d" stroke-width="2" fill="none"/>
+      <path d="M38 50 q8 -4 16 0" stroke="#2a2018" stroke-width="2" fill="none"/><circle cx="52" cy="42" r="2.5" fill="#111"/></svg>`;
+  }
+  const H = {stout:30, deep:32, oval:26, long:17, vlong:12, cat:20}[d.shape]||24;
+  const nose = d.shape==="vlong"?12:20, tailX = d.shape==="vlong"?170:160;
+  const body = `M${nose},50 C${nose+20},${50-H} ${tailX-40},${50-H} ${tailX},50 C${tailX-40},${50+H} ${nose+20},${50+H} ${nose},50 Z`;
+  let tail = d.tail==="fork" ? `M${tailX-5},50 L${tailX+30},${50-24} L${tailX+18},50 L${tailX+30},${50+24} Z`
+           : d.tail==="round" ? `M${tailX-5},50 Q${tailX+32},${50-26} ${tailX+32},50 Q${tailX+32},${50+26} ${tailX-5},50 Z`
+           : `M${tailX-5},50 L${tailX+26},${50-20} L${tailX+26},${50+20} Z`;
+  let pat = "";
+  const rnd = (i,m)=> (Math.sin(i*12.9898)*43758.5453 % 1 + 1) % 1 * m;
+  if(d.pattern==="spots"){ for(let i=0;i<34;i++) pat+=`<circle cx="${nose+10+rnd(i,tailX-nose-10)}" cy="${50-H+rnd(i+99,2*H)}" r="2.6" fill="${d.pc}"/>`; }
+  if(d.pattern==="finespots"){ for(let i=0;i<60;i++) pat+=`<circle cx="${nose+10+rnd(i,tailX-nose-10)}" cy="${50-H+rnd(i+77,2*H)}" r="1.3" fill="${d.pc}"/>`; }
+  if(d.pattern==="bluedots"){ for(let i=0;i<40;i++) pat+=`<circle cx="${nose+25+rnd(i,tailX-nose-30)}" cy="${50-H+rnd(i+55,2*H)}" r="1.6" fill="${d.pc}"/>`; }
+  if(d.pattern==="wavybars"){ for(let x=nose+40;x<tailX-10;x+=9) pat+=`<path d="M${x},${50-H} q4,8 0,16 q-4,8 0,16" stroke="${d.pc}" stroke-width="2" fill="none"/>`; }
+  if(d.pattern==="blotches"){ for(let x=nose+30;x<tailX-15;x+=16) pat+=`<ellipse cx="${x}" cy="${50-H*0.25}" rx="4" ry="6" fill="${d.pc}"/>`; }
+  if(d.pattern==="headbars"){ pat+=`<rect x="${nose+14}" y="0" width="6" height="100" fill="${d.pc}"/><rect x="${nose+30}" y="0" width="7" height="100" fill="${d.pc}"/>`; }
+  if(d.pattern==="chevrons"){ for(let x=nose+30;x<tailX-10;x+=12) pat+=`<path d="M${x},${50-H} l6,10" stroke="${d.pc}" stroke-width="3"/>`; }
+  const dorsal = d.spines
+    ? (()=>{ let s=`<path d="M${nose+40},${50-H*0.9} L${nose+95},${50-H*0.85} L${nose+95},${50-H} Z" fill="${d.fins}"/>`; for(let x=nose+40;x<=nose+95;x+=8) s+=`<path d="M${x},${50-H*0.92} l0,-12" stroke="#ff5d5d" stroke-width="1.6"/>`; return s; })()
+    : `<path d="M${nose+38},${50-H*0.85} Q${nose+70},${50-H-16} ${tailX-30},${50-H*0.6} Z" fill="${d.fins}"/>`;
+  const anal = `<path d="M${tailX-55},${50+H*0.7} Q${tailX-40},${50+H+10} ${tailX-22},${50+H*0.5} Z" fill="${d.fins}"/>`;
+  const eye = `<circle cx="${nose+14}" cy="${50-H*0.25}" r="${d.shape==="stout"?4.5:3.6}" fill="#f4f4f4"/><circle cx="${nose+14}" cy="${50-H*0.25}" r="2" fill="#111"/>`;
+  const mouth = d.mouth==="big" ? `<path d="M${nose},52 l12,4" stroke="#2a1a10" stroke-width="2.5"/>`
+              : d.mouth==="teeth" ? `<path d="M${nose-4},53 L${nose+18},54" stroke="#111" stroke-width="2"/><path d="M${nose+2},53 l2,-3 l2,3 l2,-3 l2,3 l2,-3" stroke="#fff" stroke-width="1" fill="none"/>`
+              : `<path d="M${nose},51 l6,1" stroke="#222" stroke-width="1.5"/>`;
+  const face = d.face ? `<path d="M${nose+10},${54} l10,-3 M${nose+10},${58} l11,-3" stroke="#5fa8e0" stroke-width="1.5"/>` : "";
+  const scutes = d.scutes ? `<path d="M${tailX-30},50 L${tailX-4},50" stroke="#5c6d78" stroke-width="3" stroke-dasharray="3 2"/>` : "";
+  const barbels = d.barbels ? `<path d="M${nose+2},54 q-10,8 -14,18 M${nose+4},55 q-4,10 -2,20 M${nose+3},47 q-12,-4 -16,-12" stroke="#3a4248" stroke-width="1.5" fill="none"/>` : "";
+  return `<svg viewBox="0 0 200 100"><defs><clipPath id="${id}"><path d="${body}"/></clipPath>
+    <linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${d.base}"/><stop offset="1" stop-color="${d.belly}"/></linearGradient></defs>
+    <path d="${tail}" fill="${d.fins}"/>${dorsal}${anal}
+    <path d="${body}" fill="url(#g${id})"/><g clip-path="url(#${id})">${pat}</g>${scutes}
+    <path d="M${nose+40},${50+H*0.2} q10,10 22,8" fill="${d.fins}" opacity=".85"/>
+    ${eye}${mouth}${face}${barbels}</svg>`;
+}
+
+/* Real photos — Wikimedia Commons (free licences, attribution shown in-app) */
+const PHOTOS = {
+  hamour:   {file:"Epinephelus coioides (Orange spotted grouper) in the Philippines.jpg", by:"Obsidian Soul", lic:"CC BY-SA 4.0"},
+  kanad:    {file:"Scomberomorus commerson (USNM-408897).jpg", by:"U.S. FDA", lic:"ملكية عامة"},
+  jesh:     {file:"Caranx ignobilis.jpg", by:"Dwayne Meadows, NOAA", lic:"ملكية عامة"},
+  queen:    {file:"Barred queenfish.jpg", by:"Hamid Badar Osmany", lic:"CC BY 3.0", note:"نوع قريب من الجنس نفسه (Scomberoides tala)"},
+  shaari:   {file:"Lethrinus nebulosus JNC1837.JPG", by:"Jean-Lou Justine", lic:"CC BY-SA 3.0"},
+  safi:     {file:"Sigano pintado (Siganus canaliculatus), Anilao, Filipinas, 2023-08-23, DD 193.jpg", by:"Diego Delso", lic:""},
+  faskar:   {file:"Acanthopagrus bifasciatus.jpg", by:"Хомелка", lic:"CC BY 3.0"},
+  barracuda:{file:"Sphyraena barracuda by NPS.jpg", by:"Larry Basch, NPS", lic:"ملكية عامة"},
+  catfish:  {file:"Arius arius.jpg", by:"Hamid Badar Osmany", lic:"", note:"Arius arius"},
+  stingray: {file:"Honeycomb stingray (Himantura uarnak).jpg", by:"Citron", lic:"CC BY-SA 3.0"},
+  stonefish:{file:"Reef stonefish (Synanceia verrucosa) (49257554698).jpg", by:"Rickard Zerpe", lic:"CC BY 2.0"},
+  seasnake: {file:"Hydrophis platurus 741716.jpg", by:"Martín Sánchez Vilchis", lic:"CC BY-SA 4.0"}
+};
+const commonsImg = (file, w) => "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(file.replace(/ /g,"_")) + "?width=" + w;
+const commonsPage = file => "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(file.replace(/ /g,"_"));
+let MYPHOTOS = store.get("fishphotos", {});
+function fishMedia(f, big){
+  const mine = MYPHOTOS[f.id];
+  const ph = PHOTOS[f.id];
+  const svg = fishSVG(f.draw).replace("<svg ", '<svg class="fallback" ');
+  if(mine) return `<div class="ph${big?" big":""}"><img src="${mine}" alt="${f.ar}"></div>`;
+  if(ph) return `<div class="ph${big?" big":""}"><img src="${commonsImg(ph.file, big?800:320)}" alt="${f.ar}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('err')">${svg}</div>`;
+  return `<div class="ph${big?" big":""} err">${svg}</div>`;
+}
+function photoCredit(f){
+  if(MYPHOTOS[f.id]) return `<div class="mute" style="font-size:11px">صورتك الخاصة · <a href="#" data-rmphoto="${f.id}" style="color:var(--acc)">إعادة الصورة الأصلية</a></div>`;
+  const ph = PHOTOS[f.id];
+  if(!ph) return `<div class="mute" style="font-size:11px">رسم توضيحي — لا تتوفر صورة مرخّصة لهذا النوع بعد. أضف صورتك عند اصطياده.</div>`;
+  return `<div class="mute" style="font-size:11px">صورة: ${ph.by}${ph.lic?" · "+ph.lic:""} · <a href="${commonsPage(ph.file)}" target="_blank" rel="noopener" style="color:var(--acc)">Wikimedia Commons</a>${ph.note?" · "+ph.note:""}</div>`;
+}
+async function resizeToDataURL(file, max=900){
+  const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+  const k = Math.min(1, max/Math.max(img.width,img.height));
+  const c = document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg", 0.8); // re-encoding drops EXIF incl. GPS location
+}
+
+function banActive(f, date=new Date()){
+  if(!f.ban) return false;
+  const m = date.getMonth()+1, d = date.getDate();
+  const v = m*100+d, a = f.ban.from[0]*100+f.ban.from[1], b = f.ban.to[0]*100+f.ban.to[1];
+  return v>=a && v<=b;
+}
+let fishFilter = "all";
+$$("#fishFilter button").forEach(b=>b.onclick=()=>{ $$("#fishFilter button").forEach(x=>x.classList.toggle("on",x===b)); fishFilter=b.dataset.v; renderFish(); });
+function renderFish(){
+  const active = FISH.filter(f=>banActive(f));
+  $("#banNow").style.display = active.length ? "block" : "none";
+  $("#banNow").innerHTML = active.length ? "منع موسمي ساري الآن: " + active.map(f=>`<b>${f.ar}</b>`).join("، ") + ". أطلقها فوراً إن اصطدتها." : "";
+  const list = FISH.filter(f=>fishFilter==="all" || f.tags.includes(fishFilter));
+  $("#fishList").innerHTML = list.map(f=>`
+    <div class="card fish" data-f="${f.id}">
+      ${fishMedia(f,false)}
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:17px">${f.ar}</div>
+        <div class="mute">${f.en}</div>
+        <div>${f.tags.includes("danger")?'<span class="chip warn">سامّة / خطرة</span>':""}${f.tags.includes("lure")?'<span class="chip ok">تضرب الطعم</span>':""}${banActive(f)?'<span class="chip warn">ممنوعة الآن</span>':""}</div>
+      </div>
+    </div>`).join("");
+  $$("#fishList .fish").forEach(el=>el.onclick=()=>{
+    const f = FISH.find(x=>x.id===el.dataset.f);
+    openModal(`${fishMedia(f,true)}
+      ${photoCredit(f)}
+      <label class="btn sec sm" style="display:inline-block;margin-top:8px;cursor:pointer">📷 أضف صورتك لهذا النوع<input type="file" accept="image/*" data-addphoto="${f.id}" style="display:none"></label>
+      <h2 style="margin-top:8px">${f.ar} <span class="mute" style="font-size:13px">— ${f.en}</span></h2>
+      <div class="mute" style="font-style:italic">${f.sci}</div>
+      <h3>كيف تميّزها؟</h3><p>${f.id_}</p>
+      <h3>أين تجدها؟</h3><p>${f.where}</p>
+      <h3>بماذا تُصاد؟</h3><p>${f.lure}</p>
+      <div class="banner ${f.tags.includes("danger")?"red":""}"><b>تحذير:</b> ${f.warn}</div>
+      ${f.ban?`<div class="banner red"><b>المنع الموسمي:</b> ${f.ban.text}.</div>`:""}
+      <div class="mute">الأسماء المحلية تختلف أحياناً بين مناطق الخليج؛ الاسم العلمي هو المرجع الأدق.</div>`);
+  });
+}
+
+
+document.addEventListener("change", async e=>{
+  const inp = e.target.closest("[data-addphoto]"); if(!inp || !inp.files[0]) return;
+  try{
+    const url = await resizeToDataURL(inp.files[0]);
+    MYPHOTOS[inp.dataset.addphoto] = url;
+    if(!store.set("fishphotos", MYPHOTOS)){ delete MYPHOTOS[inp.dataset.addphoto]; toast("مساحة التخزين ممتلئة"); return; }
+    closeModal(); renderFish(); toast("أُضيفت صورتك، وحُذفت منها بيانات الموقع تلقائياً");
+  }catch(err){ toast("تعذّر قراءة الصورة"); }
+});
+document.addEventListener("click", e=>{
+  const a = e.target.closest("[data-rmphoto]"); if(!a) return; e.preventDefault();
+  delete MYPHOTOS[a.dataset.rmphoto]; store.set("fishphotos", MYPHOTOS); closeModal(); renderFish();
+});
+
+/* =========================================================
+   Catch log
+   ========================================================= */
+let LOG = store.get("log", []);
+function fillLogSpots(){
+  const all = [...mySpots, ...spots];
+  $("#lgSpot").innerHTML = `<option value="">— بدون نقطة محددة —</option>` + all.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+}
+function fillLogFish(){
+  $("#lgFish").innerHTML = `<option value="">لا شيء</option>` + FISH.filter(f=>f.id!=="seasnake").map(f=>`<option value="${f.id}">${f.ar}</option>`).join("") + `<option value="other">نوع آخر</option>`;
+}
+function nowLocalInput(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+$("#lgTime").value = nowLocalInput();
+$("#btnLog").onclick = ()=>{
+  const sid = $("#lgSpot").value, all=[...mySpots,...spots], sp = all.find(s=>s.id===sid);
+  const t = new Date($("#lgTime").value || Date.now());
+  let cond = null; let best=null,dd=Infinity;
+  SCORED.forEach(x=>{ const d=Math.abs(x.row.t-t); if(d<dd){dd=d;best=x;} });
+  if(best && dd<3*36e5) cond = {score:best.score, tide:best.row.tideState, wind:best.row.wind, wave:best.row.wave, sst:best.row.sst, light:best.row.lightK, moon:moonName(best.moon)};
+  const fishId = $("#lgFish").value;
+  if(fishId){ const f = FISH.find(x=>x.id===fishId); if(f && banActive(f,t)) toast("تنبيه: "+f.ar+" ممنوع صيده في هذه الفترة، أطلقه"); }
+  LOG.unshift({ id:Date.now(), t:t.toISOString(), spot: sp?sp.name:"", spotId:sid, lure:$("#lgLure").value, color:$("#lgColor").value, fish:fishId, count:+$("#lgCount").value||0, note:$("#lgNote").value.trim(), cond });
+  store.set("log", LOG); $("#lgNote").value=""; $("#lgCount").value=0; $("#lgTime").value = nowLocalInput();
+  renderLog(); toast("حُفظت الرحلة");
+};
+function renderLog(){
+  $("#logList").innerHTML = LOG.length ? LOG.slice(0,50).map(e=>{
+    const f = FISH.find(x=>x.id===e.fish);
+    return `<div class="spot" style="cursor:default">
+      <div class="dot" style="background:${e.count>0?"var(--good)":"#4a5d70"}">${e.count}</div>
+      <div style="flex:1"><div style="font-weight:700">${e.spot?esc(e.spot):"رحلة"} — ${new Date(e.t).toLocaleDateString("ar-BH-u-nu-latn")} ${fmtH(new Date(e.t))}</div>
+      <div class="mute">${e.lure} · ${e.color}${f?" · "+f.ar:""}${e.cond?` · ${e.cond.tide||""}`:""}</div>
+      ${e.note?`<div class="mute">${esc(e.note)}</div>`:""}</div>
+      <button class="btn sec sm" data-del="${e.id}">حذف</button></div>`;
+  }).join("") : `<div class="mute">لا رحلات بعد.</div>`;
+  $$("[data-del]").forEach(b=>b.onclick=()=>{ LOG = LOG.filter(x=>x.id!=+b.dataset.del); store.set("log",LOG); renderLog(); });
+  // stats
+  if(LOG.length>=3){
+    const agg = key => { const m={}; LOG.forEach(e=>{ const k=key(e); if(!k) return; m[k]=m[k]||{trips:0,fish:0}; m[k].trips++; m[k].fish+=e.count; }); return Object.entries(m).sort((a,b)=>(b[1].fish/b[1].trips)-(a[1].fish/a[1].trips)); };
+    const row = (title, arr)=> arr.length?`<h3>${title}</h3><table class="t">${arr.slice(0,4).map(([k,v])=>`<tr><td>${k}</td><td>السمك: ${v.fish} · الرحلات: ${v.trips}</td><td style="color:var(--acc2)">${(v.fish/v.trips).toFixed(1)}</td></tr>`).join("")}</table>`:"";
+    const hourB = e=>{ const h=new Date(e.t).getHours(); return h<5?"ليل متأخر":h<9?"الفجر والصباح الباكر":h<15?"النهار":h<19?"العصر والغروب":"الليل"; };
+    $("#logStats").innerHTML = `<div class="mute">الرقم الأيمن = متوسط السمك في الرحلة.</div>` + row("أنجح الطُّعوم", agg(e=>e.lure)) + row("أنجح الألوان", agg(e=>e.color)) + row("أنجح الأوقات", agg(hourB)) + row("حركة الماء", agg(e=>e.cond&&e.cond.tide)) + row("أنجح النقاط", agg(e=>e.spot));
+  }
+}
+$("#btnExport").onclick = async ()=>{
+  const data = JSON.stringify({log:LOG, myspots:mySpots, v:1});
+  try{ await navigator.clipboard.writeText(data); toast("نُسخت النسخة الاحتياطية، الصقها في ملاحظاتك أو بريدك"); }
+  catch(e){ openModal(`<h2>نسخة احتياطية</h2><p class="mute">انسخ النص التالي واحفظه:</p><textarea rows="8">${esc(data)}</textarea>`); }
+};
+$("#btnImport").onclick = ()=>{
+  openModal(`<h2>استيراد</h2><textarea id="impTxt" rows="8" placeholder="الصق النسخة الاحتياطية هنا"></textarea><div class="row" style="margin-top:10px"><button class="btn" id="impGo">استيراد</button></div>`);
+  $("#impGo").onclick = ()=>{
+    try{ const d = JSON.parse($("#impTxt").value); if(Array.isArray(d.log)){ LOG=d.log; store.set("log",LOG); } if(Array.isArray(d.myspots)){ mySpots=d.myspots; store.set("myspots",mySpots); }
+      closeModal(); renderLog(); renderSpots(); fillLogSpots(); toast("تم الاستيراد"); }catch(e){ toast("النص غير صالح"); }
+  };
+};
+
+/* =========================================================
+   Boot
+   ========================================================= */
+function renderAll(){ renderNow(); renderSpots(); renderLearn(); renderFish(); renderLog(); }
+async function loadConditions(){
+  try{
+    const rows = await fetchConditions(BH_CENTER[0], BH_CENTER[1]);
+    RECORDS = rows;
+    SCORED = rows.map((r,i)=>factorsAt(rows,i,BH_CENTER[0],BH_CENTER[1]));
+    $("#netBanner").style.display="none";
+  }catch(e){
+    $("#netBanner").style.display="block";
+    $("#netBanner").textContent = "تعذّر جلب بيانات البحر الآن. يمكنك استعمال «ماذا أربط؟» بإدخال الظروف يدوياً، ومكتبة العُقد ودليل الأسماك والسجلّ تعمل دون إنترنت.";
+  }
+  renderAll();
+}
+initMap();
+fillLogSpots(); fillLogFish();
+renderAll();
+loadConditions();
+setInterval(loadConditions, 30*60*1000);
+</script>
+</body>
+</html>
