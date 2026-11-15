@@ -217,7 +217,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.6</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.7</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -382,7 +382,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 3.6 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.7 — Specter Angler BH</p>
     <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
   </div>
 </section>
@@ -1708,7 +1708,7 @@ renderAll();
 loadConditions();
 setInterval(loadConditions, 30*60*1000);
 /* ---------------- Update check (works for the website and the Android app) ---------------- */
-const APP_VER = "3.6";
+const APP_VER = "3.7";
 const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 async function checkUpdate(manual){
   try{
@@ -1734,7 +1734,7 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
 }
 </script>
 <script src="beginner.js?v=2.5"></script>
-<script src="knots3d.js?v=3.6"></script>
+<script src="knots3d.js?v=3.7"></script>
 <script src="motion.js?v=3.5"></script>
 </body>
 </html>
