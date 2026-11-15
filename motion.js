@@ -298,11 +298,10 @@
       <h2>🔥 الآن وقت ذروة الصيد!</h2>
       <p>${(why || []).slice(0, 3).map(w => "• " + w).join("<br>") || "الظروف ممتازة الآن"}</p>
       <div class="row" style="justify-content:center;margin-top:12px">
-        <button class="btn" id="pkGo">🎯 أقرب أفضل المواقع</button><button class="btn sec" id="pkX">لاحقاً</button></div></div>`;
+        <button class="btn" id="pkX">حسناً</button></div></div>`;
     document.body.appendChild(ov);
     const close = () => { ov.classList.add("out"); setTimeout(() => ov.remove(), 300); };
     ov.querySelector("#pkX").onclick = close;
-    ov.querySelector("#pkGo").onclick = () => { close(); const b = document.getElementById("btnNearest"); b && b.click(); };
     if (navigator.vibrate) try { navigator.vibrate([60, 40, 60]); } catch (e) {}
     if (RM) return;
     const cv = ov.querySelector("canvas"), dpr = Math.min(devicePixelRatio || 1, 2);
