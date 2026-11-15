@@ -208,6 +208,8 @@
     float_minnow: "لفّ بطيء ثابت فيغوص قليلاً ويرتعش، وإذا توقّفت يطفو للأعلى: التوقّف يغري المفترس.",
     sink_minnow: "اتركه يغوص للعمق الذي تريده (عُدّ ثوانيَ)، ثم لفّ بثبات أو بنترات خفيفة.",
     jig: "ارفع القصبة بقوة ثم اخفضها مع لمّ الخيط: الضربة غالباً أثناء نزوله المتراقص.",
+    fast_jig: "نترة قوية بالقصبة مع كل لفّة من المقبض، بسرعة ودون توقّف، من القاع حتى منتصف الماء، ثم اتركه يغوص وكرّر.",
+    slow_jig: "ارفع طرف القصبة رفعة قصيرة مع ربع أو نصف لفّة، ثم اخفضها ببطء واترك الجك يرفرف نازلاً. راقب الخيط: أي توقّف أو ارتخاء أثناء النزول ضربة.",
     paddle: "لفّ ثابت قرب القاع أو في منتصف الماء: الذيل يرتجف وحده كسمكة تسبح.",
     weedless: "قفزات قصيرة على القاع بين الصخر والأعشاب: ارفع ثم اتركه يسقط.",
     spoon: "لفّ متوسط ثابت: يتأرجح ويعكس الضوء كوميض سمكة صغيرة."
@@ -219,6 +221,10 @@
       case "stickbait": return {x, y: surf - 1, rot: Math.sin(t * 7.5) * 0.5, wake: true};
       case "float_minnow": { const pause = (t % 2.4) > 1.9; const d = pause ? lerp(52, surf, ((t % 2.4) - 1.9) / 0.5) : Math.min(52, surf + (t % 2.4) * 40); return {x, y: d, rot: (pause ? -0.15 : 0.18) + Math.sin(t * 22) * 0.07}; }
       case "sink_minnow": { const d = u < 0.25 ? lerp(surf, h * 0.66, u / 0.25) : h * 0.66 + Math.sin(t * 2) * 3; return {x: u < 0.25 ? w - 40 : lerp(w - 40, 40, (u - 0.25) / 0.75), y: d, rot: u < 0.25 ? 0.6 : Math.sin(t * 20) * 0.08}; }
+      case "fast_jig": { const ph = (t % 0.42) / 0.42, dart = ph < 0.35; const cyc2 = (t % 4) / 4, y = lerp(bot - 6, surf + 14, Math.min(1, cyc2 * 1.15)) + (dart ? -3 : 3);
+        return {x: lerp(w - 40, 60, cyc2) + (dart ? -6 : 0), y, rot: dart ? -0.5 : 0.25, flash: dart}; }
+      case "slow_jig": { const ph = (t % 2.6) / 2.6, up = ph < 0.18; const y = up ? lerp(bot - 6, h * 0.45, ph / 0.18) : lerp(h * 0.45, bot - 6, (ph - 0.18) / 0.82);
+        const glide = up ? 0 : Math.sin((ph - 0.18) * 18) * 14; return {x: lerp(w - 50, 60, u) + glide, y, rot: up ? -1.2 : Math.sin((ph - 0.18) * 18) * 0.9, flash: !up}; }
       case "jig": { const ph = (t % 1.6) / 1.6, up = ph < 0.25; const y = up ? lerp(bot - 4, h * 0.42, ph / 0.25) : lerp(h * 0.42, bot - 4, (ph - 0.25) / 0.75); return {x: lerp(w - 40, 40, u), y, rot: up ? -1.1 : Math.sin(t * 14) * 0.6, flash: !up}; }
       case "paddle": return {x, y: h * 0.66 + Math.sin(t * 3) * 4, rot: Math.sin(t * 16) * 0.06, tail: true};
       case "weedless": { const ph = (t % 1.3) / 1.3, hop = Math.sin(Math.PI * Math.min(ph / 0.7, 1)); return {x, y: bot - 6 - hop * 26, rot: ph < 0.35 ? -0.4 : 0.25, puff: ph > 0.68 && ph < 0.8}; }

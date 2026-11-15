@@ -217,7 +217,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v4.1</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v4.2</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -383,7 +383,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 4.1 — Specter Angler BH</p>
+    <p class="mute">الإصدار 4.2 — Specter Angler BH</p>
     <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
   </div>
 </section>
@@ -406,7 +406,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <script src="tide.js?v=2.6"></script>
 <script src="solunar.js?v=3.4"></script>
 <script src="tidepro.js?v=4.0"></script>
-<script src="visuals.js?v=2.7"></script>
+<script src="visuals.js?v=4.2"></script>
 <script src="gear.js?v=2.5"></script>
 <script>
 "use strict";
@@ -1119,10 +1119,14 @@ function recommend(c){
     out.lure = "طعم سطحي (بوبر أو ستكبيت)"; out.keys=["popper","stickbait"];
     out.alt = "إن لم تأتِ ضربات خلال 20 دقيقة، انتقل إلى منو غاطس"; out.altKeys=["sink_minnow"];
     out.why.push("في الضوء الخافت يطارد المفترس صغار السمك عند السطح، والضربة السطحية أمتع ما في الصيد");
+  } else if((c.wind>20 || c.depth==="deep") && c.bottom==="rocks" && c.wind<=25){
+    out.lure = "جك بطيء (Slow pitch jig) للقاع الصخري"; out.keys=["slow_jig"];
+    out.alt = "جك سريع (Fast jig) إن رأيت مطاردة للسمك الصغير"; out.altKeys=["fast_jig"];
+    out.why.push("القاع صخري وعميق: الجك البطيء يرفرف قرب الصخور حيث يكمن الهامور والشعري، والضربة تأتي وهو ينزل");
   } else if(c.wind>20 || c.depth==="deep"){
-    out.lure = "جك معدني للرمي"; out.keys=["jig"];
-    out.alt = "سوفت بيت ثقيل الرأس للقاع"; out.altKeys=["paddle"];
-    out.why.push(c.wind>20 ? "الجك ثقيل ونحيف فيشقّ الريح ويصل بعيداً" : "الجك يغوص بسرعة إلى العمق حيث يقف السمك");
+    out.lure = "جك سريع (Fast jig) أو جك معدني للرمي"; out.keys=["fast_jig","jig"];
+    out.alt = "جك بطيء قرب القاع، أو سوفت بيت ثقيل الرأس"; out.altKeys=["slow_jig","paddle"];
+    out.why.push(c.wind>20 ? "الجك ثقيل ونحيف فيشقّ الريح ويصل بعيداً" : "الجك يغوص بسرعة إلى العمق حيث يقف السمك، والسحب السريع يغري الكنعد والجش");
   } else if(c.bottom==="grass" || (c.bottom==="rocks" && c.depth==="shallow")){
     out.lure = "سوفت بيت بكلّاب مخفي (Weedless)"; out.keys=["weedless"];
     out.alt = "منو عائم يُسحب فوق الصخور"; out.altKeys=["float_minnow"];
@@ -1143,13 +1147,17 @@ function recommend(c){
   else out.color = "شارتروز أو برتقالي فاقع، أو أسود لظلّ واضح. ويُفضّل طعم بخشخيشة (Rattle)";
   // Weight
   const w = c.wind;
-  if(out.lure.includes("جك")) out.weight = w>25 ? "30–40 غرام" : w>15 ? "20–30 غرام" : "15–20 غرام";
+  if(out.keys.includes("slow_jig")) out.weight = c.depth==="deep" || w>15 ? "40–60 غراماً" : "20–40 غراماً";
+  else if(out.keys.includes("fast_jig")) out.weight = w>25 ? "40–60 غراماً" : w>15 ? "30–40 غراماً" : "20–30 غراماً";
+  else if(out.lure.includes("جك")) out.weight = w>25 ? "30–40 غرام" : w>15 ? "20–30 غرام" : "15–20 غرام";
   else if(out.lure.includes("سوفت")) out.weight = c.depth==="deep" ? "رأس 14–21 غرام" : c.depth==="shallow" ? "رأس 5–7 غرامات" : "رأس 7–14 غرام";
   else out.weight = w>20 ? "طعم 15–25 غرام (الأثقل يُرمى أبعد)" : "طعم 9–15 غرام";
   // Retrieve
   if(c.sst<20) out.retrieve = "سحب بطيء مع توقّفات طويلة، فالسمك كسول في الماء البارد";
   else if(c.sst>30) out.retrieve = "سحب سريع ومتقطّع في الفجر، ثم أعمق وأبطأ مع ارتفاع الشمس";
   else out.retrieve = out.lure.includes("سطحي") ? "نترات قصيرة بطرف القصبة مع توقّف ثانية، والضربة غالباً تأتي في التوقّف"
+                   : out.keys.includes("slow_jig") ? "ارمِ واتركه يصل القاع، ثم رفعة قصيرة مع ربع لفّة، واتركه يرفرف نازلاً؛ راقب الخيط أثناء النزول"
+                   : out.keys.includes("fast_jig") ? "ارمِ واتركه يصل القاع، ثم نترة قوية مع كل لفّة بسرعة حتى منتصف الماء، ثم اتركه يغوص وكرّر"
                    : out.lure.includes("جك") ? "ارمِ واتركه يصل القاع، ثم ارفعه بقوة ودعه يسقط، وكرّر"
                    : "سحب متوسط ثابت، مع نترة خفيفة كل بضع لفّات";
   // Line
@@ -1747,7 +1755,7 @@ setInterval(loadConditions, 30*60*1000);
 try{ if(window.caches) caches.delete("sab-gallery-v1"); Object.keys(localStorage).filter(k=>k.startsWith("sab_gal_")).forEach(k=>localStorage.removeItem(k)); }catch(e){}
 
 /* ---------------- Update check (works for the website and the Android app) ---------------- */
-const APP_VER = "4.1";
+const APP_VER = "4.2";
 const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 async function checkUpdate(manual){
   try{
@@ -1774,6 +1782,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
 </script>
 <script src="beginner.js?v=4.1"></script>
 <script src="knots3d.js?v=3.7"></script>
-<script src="motion.js?v=3.5"></script>
+<script src="motion.js?v=4.2"></script>
 </body>
 </html>

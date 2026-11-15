@@ -31,6 +31,19 @@ const LURE_SVG = (() => {
       ${eye(48, 38)}${split(30, 41)}<path d="M26 41 h-14" stroke="#2ec4b6" stroke-width="2"/>
       ${treble(82, 66)}${treble(145, 64)}
       <text x="100" y="88" text-anchor="middle" fill="#8fa8bf" font-size="10" font-family="Tajawal">لسان صغير ويغوص</text></svg>`,
+    fast_jig: `<svg viewBox="0 0 200 90"><defs><linearGradient id="lfj" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d4f9a"/><stop offset=".45" stop-color="#9fd3ff"/><stop offset=".6" stop-color="#ffffff"/><stop offset="1" stop-color="#d7dee6"/></linearGradient></defs>
+      <path d="M30 42 Q50 37 110 37 Q170 38 190 42 Q170 46 110 47 Q50 47 30 42 Z" fill="url(#lfj)" stroke="#223" stroke-width="1"/>
+      <path d="M60 39 L190 42" stroke="#fff" stroke-width="1" opacity=".7"/>${eye(40, 41, 2.5)}
+      ${split(24, 42)}<path d="M20 42 h-10" stroke="#2ec4b6" stroke-width="2"/>
+      <path d="M26 44 q6 12 16 12" stroke="#ffb347" stroke-width="1.5" fill="none"/><path d="M42 56 q7 0 7 -7 l-3 3" stroke="#c9d3db" stroke-width="1.8" fill="none"/>
+      <text x="100" y="80" text-anchor="middle" fill="#8fa8bf" font-size="10" font-family="Tajawal">طويل ونحيف جداً · يغوص بسرعة</text></svg>`,
+    slow_jig: `<svg viewBox="0 0 200 90"><defs><linearGradient id="lsj" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a3d"/><stop offset=".5" stop-color="#ffd166"/><stop offset="1" stop-color="#e8f7ff"/></linearGradient></defs>
+      <path d="M50 42 Q70 22 110 22 Q150 24 158 42 Q150 60 110 62 Q70 62 50 42 Z" fill="url(#lsj)" stroke="#333" stroke-width="1"/>
+      <path d="M62 42 Q100 30 150 42" stroke="#fff" stroke-width="1.4" fill="none" opacity=".8"/>${eye(70, 38, 3)}
+      ${split(44, 42)}<path d="M40 42 h-12" stroke="#2ec4b6" stroke-width="2"/>
+      <path d="M46 44 q6 12 16 12" stroke="#ffb347" stroke-width="1.5" fill="none"/><path d="M62 56 q7 0 7 -7 l-3 3" stroke="#c9d3db" stroke-width="1.8" fill="none"/>
+      <path d="M160 42 q8 0 12 8" stroke="#ffb347" stroke-width="1.5" fill="none"/><path d="M172 50 q0 8 -7 8 l3 -3" stroke="#c9d3db" stroke-width="1.8" fill="none"/>
+      <text x="100" y="82" text-anchor="middle" fill="#8fa8bf" font-size="10" font-family="Tajawal">قصير وعريض · يرفرف وهو ينزل</text></svg>`,
     jig: `<svg viewBox="0 0 200 90"><defs><linearGradient id="lj1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9eef2"/><stop offset=".35" stop-color="#8fa3b4"/><stop offset=".55" stop-color="#ffffff"/><stop offset="1" stop-color="#6b7f90"/></linearGradient></defs>
       <path d="M40 40 Q60 33 110 34 Q160 36 178 42 Q160 48 110 50 Q60 51 40 44 Z" fill="url(#lj1)" stroke="#333" stroke-width="1"/>
       <path d="M100 36 L104 48 M120 36 L124 49" stroke="#2e86de" stroke-width="2" opacity=".5"/>
@@ -66,6 +79,8 @@ const LURES = {
   stickbait:   {name: "ستكبيت (Stickbait)", desc: "طعم سطحي طويل بلا لسان. بالسحب المتقطّع يتمايل يميناً ويساراً على السطح كسمكة مصابة.", q: "stickbait walk the dog saltwater"},
   float_minnow:{name: "منو عائم (Floating minnow)", desc: "طعم صلب على شكل سمكة بلسان أمامي كبير. يطفو حين تتوقف، ويغوص قليلاً حين تسحب.", q: "floating minnow lure saltwater"},
   sink_minnow: {name: "منو غاطس (Sinking minnow)", desc: "يشبه المنو العائم لكن لسانه صغير ويغوص حين تتوقف، فيغطي الطبقات المتوسطة.", q: "sinking minnow lure shore casting"},
+  fast_jig:    {name: "جك سريع (Fast jig)", desc: "جك طويل نحيف وزنه نحو الذيل، يشقّ التيار ويغوص بسرعة. يُسحب بنترات سريعة متتابعة فيندفع كسمكة هاربة. للمفترس السريع: الكنعد والجش والتونة. من الشاطئ: 20–60 غراماً.", q: "fast jigging high pitch technique"},
+  slow_jig:    {name: "جك بطيء (Slow pitch jig)", desc: "جك قصير عريض كالورقة وزنه في الوسط. يُرفع رفعة قصيرة ثم يُترك يرفرف وينزلق أفقياً وهو ينزل، والضربة غالباً أثناء النزول. لسمك القاع: الهامور والشعري والحمرة. من الشاطئ: 20–60 غراماً قرب الصخور.", q: "slow pitch jigging technique"},
   jig:         {name: "جك معدني (Metal jig)", desc: "قطعة معدنية ثقيلة نحيفة بكلّاب مساعد عند الرأس. تُرمى أبعد من أي طعم وتغوص بسرعة.", q: "metal jig shore jigging casting"},
   paddle:      {name: "سوفت بيت بذيل متحرّك (Paddle tail)", desc: "جسم مطاطي بذيل عريض يهتز عند السحب، يُركّب على رأس رصاص فيه الكلّاب.", q: "paddle tail soft plastic jig head saltwater"},
   weedless:    {name: "سوفت بيت بكلّاب مخفي (Weedless)", desc: "جسم مطاطي بكلّاب معقوف يُخفى رأسه في ظهر الطعم، فلا يعلق بالصخور والأعشاب.", q: "weedless soft plastic rigging offset hook"},
