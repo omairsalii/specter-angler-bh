@@ -22,6 +22,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-v1
 
       - name: Prepare web files
         run: |
@@ -56,7 +62,7 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon || (echo "retrying after 60s"; sleep 60; ./gradlew assembleDebug --no-daemon) || (sleep 120; ./gradlew assembleDebug --no-daemon)
           cp app/build/outputs/apk/debug/app-debug.apk ../SpecterAngler-BH.apk
 
       - name: Publish release
