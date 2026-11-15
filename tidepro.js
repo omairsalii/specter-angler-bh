@@ -5,7 +5,7 @@
   const RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const dayStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d; };
   const fmt = d => (typeof fmtH === "function" ? fmtH(new Date(+d)) : new Date(+d).toLocaleTimeString());
-  const dur = ms => { ms = Math.max(0, ms); const h = Math.floor(ms / H), m = Math.round((ms % H) / 6e4); return (h ? `${h} س ` : "") + `${m} د`; };
+  const dur = ms => { const tm = Math.round(Math.max(0, ms) / 6e4), h = Math.floor(tm / 60), m = tm % 60; return (h ? `${h} س ` : "") + `${m} د`; };
   const dayName = (t, today) => {
     const d = dayStart(t), diff = Math.round((d - dayStart(today)) / DAY);
     if (diff === 0) return "اليوم"; if (diff === 1) return "غداً"; if (diff === -1) return "أمس";
@@ -44,6 +44,7 @@
     ST.box = box; ST.off = off || 0;
     if (ST.sel == null) ST.sel = +dayStart(Date.now());
     box.innerHTML = `<div class="tp-head"><h2>🌊 المدّ والجزر</h2><span class="tp-src">محطة ميناء سلمان${ST.off ? ` · مُعايَر ${ST.off > 0 ? "+" : ""}${ST.off} د` : ""}</span></div>
+      <div class="mute" style="font-size:11px;margin-top:6px">أين نحن الآن في دورة الماء:</div>
       <div id="tpLive"></div>
       <div class="tp-days"><button class="tp-arr" data-tpd="-1" aria-label="اليوم السابق">›</button><div id="tpDayName"></div><button class="tp-arr" data-tpd="1" aria-label="اليوم التالي">‹</button></div>
       <div id="tpCoef"></div>
@@ -101,7 +102,7 @@
     const c = coefOf(d0, ST.off), [lab, col] = coefLabel(c), mp = typeof moonPhase === "function" ? moonPhase(new Date(d0 + 12 * H)) : 0.5;
     document.getElementById("tpCoef").innerHTML = `<div class="tp-coef">
       <div class="tp-ring" style="--p:${(c - 20)}%;--c:${col}"><b>${c}</b><small>/120</small></div>
-      <div><div style="font-weight:800;color:${col}">${lab}</div><div class="mute">قمر ${typeof moonName === "function" ? moonName(mp) : ""} · ${c >= 70 ? "التيار أقوى وحركة السمك أنشط" : c >= 45 ? "حركة ماء معتدلة" : "حركة الماء خفيفة: ركّز على الفجر والغروب"}</div></div></div>`;
+      <div><div class="mute" style="font-size:11px">قوة المدّ في هذا اليوم (معامل المدّ)</div><div style="font-weight:800;color:${col}">${lab}</div><div class="mute">قمر ${typeof moonName === "function" ? moonName(mp) : ""} · ${c >= 70 ? "التيار أقوى وحركة السمك أنشط" : c >= 45 ? "حركة ماء معتدلة" : "حركة الماء خفيفة: ركّز على الفجر والغروب"}</div></div></div>`;
     const ev = HTIDE.extremes(d0 - 3 * H, d1 + 3 * H, ST.off), inDay = ev.filter(e => e.t >= d0 && e.t < d1);
     document.getElementById("tpTable").innerHTML = `<div class="tp-rows">${inDay.map(e => {
       const past = e.t < now;
