@@ -48,8 +48,9 @@
       <div class="tp-days"><button class="tp-arr" data-tpd="-1" aria-label="اليوم السابق">›</button><div id="tpDayName"></div><button class="tp-arr" data-tpd="1" aria-label="اليوم التالي">‹</button></div>
       <div id="tpCoef"></div>
       <div id="tpTable"></div>
+      <div id="tpSol"></div>
       <div class="tp-chartwrap"><div id="tpChart"></div><div id="tpTip"></div></div>
-      <div class="tp-legend"><span><i style="background:rgba(46,204,113,.35)"></i> أفضل وقت (أول ساعتين من المدّ)</span><span><i style="background:rgba(0,0,0,.35)"></i> الليل</span></div>
+      <div class="tp-legend"><span><i style="background:rgba(46,204,113,.35)"></i> أفضل وقت (أول ساعتين من المدّ)</span><span><i style="background:rgba(0,0,0,.35)"></i> الليل</span><span><i style="background:#9b6bff"></i> سولونار كبرى</span><span><i style="background:rgba(155,107,255,.45)"></i> صغرى</span></div>
       <h3 style="margin-top:14px">معامل المدّ لثلاثين يوماً <span class="mute" style="font-size:12px">· اضغط أي يوم</span></h3>
       <div id="tpBars" class="tp-bars"></div>
       <div class="mute" style="font-size:11px;margin-top:8px">محسوب من ثوابت محطة قياس المدّ في ميناء سلمان (TICON-4). الارتفاع منسوب إلى متوسط سطح البحر. ليس للملاحة.</div>`;
@@ -85,6 +86,9 @@
       </svg><div class="tp-now"><span>${lvl >= 0 ? "+" : ""}${lvl.toFixed(2)} م</span><em class="${rising ? "up" : "down"}">${rising ? "▲ يرتفع" : "▼ ينخفض"}</em></div></div>
       <div class="tp-side"><div class="mute">${next.type === "high" ? "🔵 المدّ القادم" : "🟠 الجزر القادم"}</div><b>${fmt(next.t)}</b><div class="tp-cd">بعد ${dur(next.t - now)}</div></div>
     </div>
+    ${(() => { if (!window.Solunar) return ""; const cur = Solunar.at(now), nx = Solunar.next(now);
+      return cur ? `<div class="tp-win sol">🌙 أنت في فترة سولونار ${cur.major ? "كبرى" : "صغرى"} (${Solunar.NAME[cur.type]}) حتى ${fmt(cur.end)}</div>`
+        : nx ? `<div class="tp-solnext">🌙 السولونار القادمة: <b>${nx.major ? "كبرى" : "صغرى"}</b> ${fmt(nx.start)} – ${fmt(nx.end)} · بعد ${dur(nx.start - now)}</div>` : ""; })()}
     <div class="tp-prog"><i style="width:${(k * 100).toFixed(1)}%;background:linear-gradient(to left,${cPrev},${cNext})"></i></div>
     ${inWindow ? `<div class="tp-win">🟩 أنت الآن في أفضل نافذة: بقي ${dur(2 * H - sinceLow)} من أول ساعتين للمدّ</div>`
       : rising ? "" : `<div class="tp-win soft">⏳ أفضل نافذة القادمة تبدأ مع الجزر ${fmt(next.type === "low" ? next.t : ev.find(e => e.type === "low" && e.t > now).t)}</div>`}`;
@@ -103,6 +107,12 @@
       const past = e.t < now;
       return `<div class="tp-row ${past ? "past" : ""}"><span class="tp-ic ${e.type}">${e.type === "high" ? "▲" : "▼"}</span><div><b>${fmt(e.t)}</b><div class="mute">${e.type === "high" ? "أعلى مدّ" : "أدنى جزر"}</div></div><div class="tp-h">${e.h >= 0 ? "+" : ""}${e.h.toFixed(2)} م</div></div>`;
     }).join("")}</div>`;
+    if (window.Solunar) {
+      const ps = Solunar.periods(d0), st = typeof sunTimes === "function" ? sunTimes(new Date(d0 + 12 * H), LAT, LNG) : null, stars = Solunar.dayRating(d0, st);
+      document.getElementById("tpSol").innerHTML = `<div class="tp-sol"><div class="tp-solh"><b>🌙 فترات السولونار</b><span title="تقييم اليوم">${"★".repeat(stars)}<em>${"★".repeat(4 - stars)}</em></span></div>
+        <div class="tp-solg">${ps.map(p => `<div class="tp-sp ${p.major ? "maj" : "min"} ${p.end < now ? "past" : ""}"><small>${p.major ? "كبرى · ساعتان" : "صغرى · ساعة"}</small><b>${fmt(p.start)} – ${fmt(p.end)}</b><span>${Solunar.NAME[p.type]}</span></div>`).join("")}</div>
+        <div class="mute" style="font-size:11px;margin-top:6px">نظرية السولونار: السمك أنشط حين يمرّ القمر فوق المكان أو تحته (الكبرى)، وعند شروقه وغروبه (الصغرى). وتكون أقوى إذا وافقت الفجر أو الغروب أو حركة المدّ.</div></div>`;
+    }
     paintChart(d0, d1, ev);
     document.querySelectorAll("#tpBars [data-tpday]").forEach(b => b.classList.toggle("on", +b.dataset.tpday === d0));
     if (scroll) { const b = document.querySelector(`#tpBars [data-tpday="${d0}"]`); b && b.scrollIntoView({block: "nearest", inline: "center", behavior: RM ? "auto" : "smooth"}); }
@@ -120,11 +130,12 @@
       <text x="${X(+st.sunrise)}" y="${pt - 6}" font-size="9" fill="#ffb347" text-anchor="middle">☀️ ${fmt(st.sunrise)}</text><text x="${X(+st.sunset)}" y="${pt - 6}" font-size="9" fill="#ffb347" text-anchor="middle">🌇 ${fmt(st.sunset)}</text>` : "";
     const flood = ev.filter(e => e.type === "low").map(e => { const a = Math.max(X(+e.t), pl), b = Math.min(X(+e.t + 2 * H), W - pr); return b > a ? `<rect x="${a}" y="${pt - 18}" width="${b - a}" height="${Hh - pt - pb + 18}" fill="rgba(46,204,113,.18)"/>` : ""; }).join("");
     const marks = ev.filter(e => e.t >= d0 && e.t < d1).map(e => `<circle cx="${X(+e.t)}" cy="${Y(e.h)}" r="4.5" fill="${e.type === "high" ? "#4da3ff" : "#ffb347"}" stroke="#0b1f33" stroke-width="1.5"/><text x="${X(+e.t)}" y="${e.type === "high" ? Y(e.h) - 8 : Y(e.h) + 15}" fill="#e8f1f8" font-size="10" font-weight="700" text-anchor="middle">${fmt(e.t)}</text>`).join("");
+    const sol = window.Solunar ? Solunar.periods(d0).map(p => { const a = Math.max(X(+p.start), pl), b = Math.min(X(+p.end), W - pr); return b > a ? `<rect x="${a}" y="${Hh - pb - 7}" width="${b - a}" height="7" rx="3" fill="${p.major ? "#9b6bff" : "rgba(155,107,255,.45)"}"/>` : ""; }).join("") : "";
     let ticks = ""; for (let h = 0; h <= 24; h += 4) ticks += `<text x="${X(d0 + h * H)}" y="${Hh - 6}" fill="#8fa8bf" font-size="9" text-anchor="${h === 0 ? "start" : h === 24 ? "end" : "middle"}">${h}:00</text>`;
     const nowL = now >= d0 && now < d1 ? `<line x1="${X(now)}" x2="${X(now)}" y1="${pt - 18}" y2="${Hh - pb}" stroke="#ff5d73" stroke-width="1.5"/><circle class="tp-pulse" cx="${X(now)}" cy="${Y(HTIDE.level(now, ST.off))}" r="5" fill="#ff5d73"/>` : "";
     const el = document.getElementById("tpChart");
     el.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" class="tp-svg" direction="ltr"><defs><linearGradient id="tpa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ec4b6" stop-opacity=".75"/><stop offset="1" stop-color="#1b4f8a" stop-opacity=".15"/></linearGradient></defs>
-      ${night}${flood}<path class="tp-area" d="${line} L${X(d1)} ${Hh - pb} L${X(d0)} ${Hh - pb} Z" fill="url(#tpa)"/><path class="tp-line" d="${line}" fill="none" stroke="#2ec4b6" stroke-width="2.5"/>${marks}${nowL}${ticks}
+      ${night}${flood}<path class="tp-area" d="${line} L${X(d1)} ${Hh - pb} L${X(d0)} ${Hh - pb} Z" fill="url(#tpa)"/><path class="tp-line" d="${line}" fill="none" stroke="#2ec4b6" stroke-width="2.5"/>${marks}${sol}${nowL}${ticks}
       <g id="tpCross" style="display:none"><line id="tpCx" y1="${pt - 18}" y2="${Hh - pb}" stroke="#fff" stroke-dasharray="2 2"/><circle id="tpCd" r="5" fill="#fff"/></g></svg>`;
     // interactive scrubbing
     const svg = el.querySelector("svg"), tip = document.getElementById("tpTip"), cross = svg.querySelector("#tpCross");
