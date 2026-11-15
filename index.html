@@ -92,6 +92,22 @@ ol.steps li{margin-bottom:6px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .btn{transition:transform .12s ease,filter .2s}.btn:active{transform:scale(.95);filter:brightness(1.15)}
 @media (prefers-reduced-motion: reduce){.view.on,.score.pop{animation:none}}
+#peakOv{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 40%,rgba(10,60,80,.92),rgba(3,12,22,.96));display:flex;align-items:center;justify-content:center;animation:fadeUp .35s ease}
+#peakOv.out{opacity:0;transition:opacity .3s}
+#peakOv canvas{position:absolute;inset:0;pointer-events:none}
+#peakOv .pk{position:relative;text-align:center;padding:24px;max-width:340px}
+#peakOv h2{font-size:26px;margin:14px 0 8px;color:#fff}
+#peakOv p{color:#cfe0ee;line-height:1.9}
+.pkring{width:130px;height:130px;margin:auto;border-radius:50%;display:flex;align-items:center;justify-content:center;border:6px solid #2ecc71;box-shadow:0 0 0 0 rgba(46,204,113,.6);animation:pulse 1.6s infinite}
+.pkring span{font-size:52px;font-weight:800;color:#2ecc71}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 26px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
+.kplayer{border:1px solid var(--acc);border-radius:12px;padding:10px;margin:8px 0;background:var(--bg2)}
+.kpstage{min-height:120px}.kpstage svg{width:100%;height:auto}
+.kpcap{margin:8px 0;min-height:48px}.kpcap .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
+.kpctl{display:flex;justify-content:center;gap:8px}
+.kpdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.kpdots i{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer}.kpdots i.on{background:var(--acc)}
+@keyframes kdraw{to{stroke-dashoffset:0}}
+@keyframes kfade{to{opacity:1}}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
@@ -142,7 +158,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.7</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.8</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -301,7 +317,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 2.7 — Specter Angler BH</p>
+    <p class="mute">الإصدار 2.8 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -982,6 +998,7 @@ function renderNow(){
   const cur = curScored();
   if(window.countUp) countUp($("#nowScore"), cur.score, scoreColor(cur.score)); else { $("#nowScore").textContent = cur.score; $("#nowScore").style.color = scoreColor(cur.score); }
   if(window.updateSea) updateSea(RECORDS, cur, 26.1, 50.55);
+  if(window.peakCelebrate) setTimeout(()=>peakCelebrate(cur, (cur.why||[]).filter(w=>w[0]==="+").map(w=>w[1])), 1200);
   const bw = bestWindow(SCORED);
   $("#bestWin").textContent = bw ? fmtH(bw.row.t)+" – "+fmtH(new Date(bw.row.t.getTime()+2*36e5)) : "—";
   const start = SCORED.findIndex(x=>x===cur);
@@ -1158,6 +1175,7 @@ function knotHtml(k){
     <div class="row">${vids.map(v=>`<a class="btn sm" href="${ytSearch(v[1])}" target="_blank" rel="noopener" style="text-decoration:none">▶ ${v[0]}</a>`).join("")}
     ${ref?`<a class="btn sm sec" href="${ref[1]}" target="_blank" rel="noopener" style="text-decoration:none">${ref[0]}</a>`:""}</div>
     <div class="mute" style="margin-top:6px">في الرسوم: <b style="color:#2ec4b6">الأخضر</b> هو الخيط (أو المضفّر)، و<b style="color:#ffb347">البرتقالي</b> طرفه الذي تعمل به، و<b style="color:#e8f1f8">الأبيض</b> القائد، و<b style="color:#9aa8b4">الرمادي</b> الكلّاب، والسهم <b style="color:#ff6b6b">الأحمر</b> يوضّح الحركة.</div>
+    ${steps.some(st=>st.s)?`<h3>🎬 العقدة متحركة</h3><div class="kplayer" data-kp="${k}"></div><h3>الخطوات كلها</h3>`:""}
     ${steps.map((st,i)=>`<div class="kstepbox"><div style="margin-bottom:8px"><span class="num">${i+1}</span>${st.t}</div>${st.s?kSvg(st.s):""}</div>`).join("")}
     <div class="banner">💡 ${n.tip}</div>
     <div class="mute">قاعدة لكل العقد: بلّل العقدة قبل الشدّ النهائي، فالاحتكاك الجاف يحرق الخيط ويضعفه.</div>`;
@@ -1543,7 +1561,7 @@ function renderLog(){
       <div style="flex:1"><div style="font-weight:700">${e.spot?esc(e.spot):"رحلة"} — ${new Date(e.t).toLocaleDateString("ar-BH-u-nu-latn")} ${fmtH(new Date(e.t))}</div>
       <div class="mute">${e.lure} · ${e.color}${f?" · "+fname(f):""}${e.cond?` · ${e.cond.tide||""}`:""}</div>
       ${e.note?`<div class="mute">${esc(e.note)}</div>`:""}</div>
-      <div style="display:flex;flex-direction:column;gap:6px">${e.lat!=null?`<a class="btn sm" href="${navUrl(e.lat,e.lng)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">🧭</a>`:""}<button class="btn sec sm" data-del="${e.id}">حذف</button></div></div>`;
+      <div style="display:flex;flex-direction:column;gap:6px">${e.lat!=null?`<a class="btn sm" href="${navUrl(e.lat,e.lng)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">🧭</a>`:""}<button class="btn sm" data-ccard="${e.id}" title="بطاقة الصيد">🖼️</button><button class="btn sec sm" data-del="${e.id}">حذف</button></div></div>`;
   }).join("") : `<div class="mute">لا رحلات بعد.</div>`;
   $$("[data-del]").forEach(b=>b.onclick=()=>{ LOG = LOG.filter(x=>x.id!=+b.dataset.del); store.set("log",LOG); renderLog(); renderLastCatch(); });
   // stats
@@ -1596,6 +1614,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
 }
 </script>
 <script src="beginner.js?v=2.5"></script>
-<script src="motion.js?v=2.7"></script>
+<script src="motion.js?v=2.8"></script>
 </body>
 </html>

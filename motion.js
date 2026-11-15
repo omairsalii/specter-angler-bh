@@ -278,3 +278,179 @@
     requestAnimationFrame(step);
   };
 })();
+
+/* ======================= PEAK-TIME CELEBRATION ======================= */
+(function () {
+  const RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.peakCelebrate = function (cur, why) {
+    if (!cur || cur.score < 80) return;
+    const ct = cur.row.t, key = ct.toDateString() + "-" + Math.floor(ct.getHours() / 3);
+    try { if (localStorage.getItem("sab_peak") === key) return; localStorage.setItem("sab_peak", key); } catch (e) {}
+    const ov = document.createElement("div"); ov.id = "peakOv";
+    ov.innerHTML = `<canvas></canvas><div class="pk">
+      <div class="pkring"><span>${cur.score}</span></div>
+      <h2>🔥 الآن وقت ذروة الصيد!</h2>
+      <p>${(why || []).slice(0, 3).map(w => "• " + w).join("<br>") || "الظروف ممتازة الآن"}</p>
+      <div class="row" style="justify-content:center;margin-top:12px">
+        <button class="btn" id="pkGo">🎯 أقرب أفضل المواقع</button><button class="btn sec" id="pkX">لاحقاً</button></div></div>`;
+    document.body.appendChild(ov);
+    const close = () => { ov.classList.add("out"); setTimeout(() => ov.remove(), 300); };
+    ov.querySelector("#pkX").onclick = close;
+    ov.querySelector("#pkGo").onclick = () => { close(); const b = document.getElementById("btnNearest"); b && b.click(); };
+    if (navigator.vibrate) try { navigator.vibrate([60, 40, 60]); } catch (e) {}
+    if (RM) return;
+    const cv = ov.querySelector("canvas"), dpr = Math.min(devicePixelRatio || 1, 2);
+    const W = innerWidth, H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
+    const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr);
+    const B = Array.from({length: 70}, () => ({x: Math.random() * W, y: H + Math.random() * H * 0.6, r: 2 + Math.random() * 7, v: 1.2 + Math.random() * 2.6, s: Math.random() * 6}));
+    const F = Array.from({length: 4}, (_, i) => ({x: -60 - i * 140, y: H * (0.2 + 0.18 * i), v: 2.2 + Math.random()}));
+    let tt = 0;
+    (function frame() {
+      if (!document.body.contains(ov)) return;
+      tt += 1 / 60; const t = tt; ctx.clearRect(0, 0, W, H);
+      B.forEach(b => { b.y -= b.v; b.x += Math.sin(t * 2 + b.s) * 0.6; if (b.y < -10) { b.y = H + 10; b.x = Math.random() * W; }
+        ctx.strokeStyle = "rgba(180,240,255,.7)"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke(); });
+      F.forEach(f => { f.x += f.v; if (f.x > W + 60) f.x = -60; const y = f.y + Math.sin(t * 3 + f.x * 0.02) * 8;
+        ctx.save(); ctx.translate(f.x, y); ctx.fillStyle = "rgba(46,196,182,.85)";
+        ctx.beginPath(); ctx.ellipse(0, 0, 20, 8, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(-30, -9); ctx.lineTo(-30, 9); ctx.fill();
+        ctx.fillStyle = "#04201d"; ctx.beginPath(); ctx.arc(12, -2, 2, 0, 7); ctx.fill(); ctx.restore(); });
+      requestAnimationFrame(frame);
+    })();
+  };
+})();
+
+/* ======================= ANIMATED KNOT PLAYER ======================= */
+(function () {
+  function prep(svg) {               // draw lines progressively, then fade in coils / arrows
+    let i = 0;
+    svg.querySelectorAll("path,ellipse,circle,line,polyline").forEach(el => {
+      if (el.closest("marker")) return;
+      const dashed = el.getAttribute("stroke-dasharray");
+      if (el.tagName === "path" && !dashed && el.getAttribute("fill") === "none" && el.getTotalLength) {
+        let L = 0; try { L = el.getTotalLength(); } catch (e) {}
+        if (L > 0) { el.style.strokeDasharray = L; el.style.strokeDashoffset = L; el.style.animation = `kdraw 1.1s ${0.15 + i * 0.25}s ease forwards`; i++; return; }
+      }
+      el.style.opacity = 0; el.style.animation = `kfade .5s ${0.3 + i * 0.12}s ease forwards`; i++;
+    });
+  }
+  function mount(box) {
+    box.dataset.ready = 1;
+    const k = box.dataset.kp, steps = (typeof KNOT_STEPS !== "undefined" && KNOT_STEPS[k]) || [];
+    if (!steps.length || !steps.some(s => s.s)) { box.remove(); return; }
+    let i = 0, playing = true, timer = 0;
+    box.innerHTML = `<div class="kpstage"></div><div class="kpcap"></div>
+      <div class="kpctl"><button class="btn sec sm" data-a="prev">⏭</button><button class="btn sm" data-a="play">⏸ إيقاف</button><button class="btn sec sm" data-a="next">⏮</button></div>
+      <div class="kpdots">${steps.map((_, j) => `<i data-j="${j}"></i>`).join("")}</div>`;
+    const stage = box.querySelector(".kpstage"), cap = box.querySelector(".kpcap"), pb = box.querySelector('[data-a="play"]');
+    const show = () => {
+      const st = steps[i];
+      stage.innerHTML = st.s ? kSvg(st.s) : "";
+      const svg = stage.querySelector("svg"); if (svg) prep(svg);
+      cap.innerHTML = `<span class="num">${i + 1}</span>${st.t}`;
+      box.querySelectorAll(".kpdots i").forEach((d, j) => d.classList.toggle("on", j === i));
+      clearTimeout(timer); if (playing) timer = setTimeout(() => { i = (i + 1) % steps.length; if (document.body.contains(box)) show(); }, 4200);
+    };
+    box.addEventListener("click", e => {
+      const a = e.target.closest("[data-a]"), d = e.target.closest("[data-j]");
+      if (d) { i = +d.dataset.j; show(); return; }
+      if (!a) return;
+      if (a.dataset.a === "play") { playing = !playing; pb.textContent = playing ? "⏸ إيقاف" : "▶ تشغيل"; }
+      if (a.dataset.a === "next") i = (i + 1) % steps.length;
+      if (a.dataset.a === "prev") i = (i - 1 + steps.length) % steps.length;
+      show();
+    });
+    show();
+  }
+  new MutationObserver(() => document.querySelectorAll(".kplayer:not([data-ready])").forEach(mount))
+    .observe(document.documentElement, {childList: true, subtree: true});
+})();
+
+/* ======================= CATCH CARD (shareable image) ======================= */
+(function () {
+  const loadImg = src => new Promise(res => { if (!src) return res(null); const im = new Image(); if (!src.startsWith("data:")) im.crossOrigin = "anonymous"; im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+  function wrap(ctx, text, x, y, maxW, lh) {
+    const words = String(text).split(" "); let line = "", n = 0;
+    for (const w of words) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > maxW && line) { ctx.fillText(line, x, y + n * lh); line = w; n++; } else line = t; }
+    if (line) { ctx.fillText(line, x, y + n * lh); n++; } return n;
+  }
+  async function render(e, photo) {
+    await (document.fonts ? document.fonts.ready : Promise.resolve());
+    const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d"); ctx.direction = "rtl";
+    const f = (typeof FISH !== "undefined") && FISH.find(x => x.id === e.fish);
+    let im = await loadImg(photo);
+    if (!im && f) {
+      const mine = typeof MYPHOTOS !== "undefined" && MYPHOTOS[f.id];
+      const ph = typeof PHOTOS !== "undefined" && PHOTOS[f.id];
+      im = await loadImg(mine || (ph && typeof commonsImg === "function" ? commonsImg(ph.file, 1080) : null));
+    }
+    if (im) {                                     // cover-fit photo
+      const s = Math.max(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
+      ctx.drawImage(im, (W - w) / 2, (H - h) / 2.6, w, h);
+    } else {
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0d3b5c"); g.addColorStop(1, "#04121f"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "rgba(46,196,182,.25)"; ctx.lineWidth = 3;
+      for (let r = 0; r < 9; r++) { ctx.beginPath(); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, 380 + r * 46 + Math.sin(x / 90 + r) * 14); ctx.stroke(); }
+      ctx.font = "260px serif"; ctx.textAlign = "center"; ctx.fillText("🐟", W / 2, 520);
+    }
+    // top brand strip
+    let g = ctx.createLinearGradient(0, 0, 0, 220); g.addColorStop(0, "rgba(4,18,31,.85)"); g.addColorStop(1, "rgba(4,18,31,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 220);
+    ctx.textAlign = "right"; ctx.fillStyle = "#2ec4b6"; ctx.font = "800 46px Tajawal, system-ui, sans-serif"; ctx.fillText("Specter Angler BH", W - 60, 92);
+    ctx.fillStyle = "#cfe0ee"; ctx.font = "500 34px Tajawal, system-ui, sans-serif"; ctx.fillText("الصَّيَّادُ الشَّبَح · البحرين", W - 60, 140);
+    // bottom panel
+    g = ctx.createLinearGradient(0, H * 0.45, 0, H); g.addColorStop(0, "rgba(4,18,31,0)"); g.addColorStop(0.35, "rgba(4,18,31,.88)"); g.addColorStop(1, "rgba(4,18,31,.97)");
+    ctx.fillStyle = g; ctx.fillRect(0, H * 0.45, W, H * 0.55);
+    const name = f ? (typeof fname === "function" ? fname(f) : f.name) : (e.count > 0 ? "صيد موفّق" : "رحلة صيد");
+    ctx.fillStyle = "#fff"; ctx.font = "800 96px Tajawal, system-ui, sans-serif"; ctx.fillText(name, W - 60, 900);
+    if (e.count > 0) { ctx.fillStyle = "#ffb347"; ctx.font = "800 64px Tajawal, system-ui, sans-serif"; ctx.textAlign = "left"; ctx.direction = "ltr"; ctx.fillText("×" + e.count, 60, 900); ctx.textAlign = "right"; ctx.direction = "rtl"; }
+    const d = new Date(e.t);
+    const lines = [
+      ["📍", e.spot || "البحرين"],
+      ["📅", d.toLocaleDateString("ar-BH-u-nu-latn", {weekday: "long", day: "numeric", month: "long"}) + " · " + (typeof fmtH === "function" ? fmtH(d) : d.toLocaleTimeString())],
+      ["🎣", [e.lure, e.color].filter(Boolean).join(" · ")],
+      ["🌊", [e.cond && e.cond.tide, e.cond && e.cond.moon && "قمر " + e.cond.moon].filter(Boolean).join(" · ")]
+    ].filter(l => l[1]);
+    ctx.font = "500 40px Tajawal, system-ui, sans-serif"; let y = 990;
+    lines.forEach(([ic, tx]) => { ctx.fillStyle = "#cfe0ee"; const n = wrap(ctx, ic + "  " + tx, W - 60, y, W - 120, 54); y += n * 54 + 10; });
+    if (e.cond && e.cond.score != null) {
+      const sc = e.cond.score, col = sc >= 70 ? "#2ecc71" : sc >= 45 ? "#f1c40f" : "#e74c3c";
+      ctx.beginPath(); ctx.arc(150, 1110, 80, 0, 7); ctx.fillStyle = "rgba(255,255,255,.06)"; ctx.fill();
+      ctx.lineWidth = 12; ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(150, 1110, 80, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * sc / 100); ctx.stroke();
+      ctx.fillStyle = col; ctx.font = "800 64px Tajawal, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.direction = "ltr"; ctx.fillText(sc, 150, 1132);
+      ctx.fillStyle = "#8fa8bf"; ctx.font = "500 26px Tajawal, system-ui, sans-serif"; ctx.direction = "rtl"; ctx.fillText("مؤشر الصيد", 150, 1232); ctx.textAlign = "right";
+    }
+    if (e.note) { ctx.fillStyle = "#8fa8bf"; ctx.font = "italic 500 34px Tajawal, system-ui, sans-serif"; wrap(ctx, "«" + e.note + "»", W - 60, Math.min(y + 20, 1290), W - 340, 46); }
+    return cv;
+  }
+  async function open(e) {
+    const ph = window._ccPhoto || null;
+    openModal(`<h2>🖼️ بطاقة الصيد</h2><div class="mute">جارٍ التصميم…</div>`);
+    let cv;
+    try { cv = await render(e, ph); } catch (err) { $("#modalBody").innerHTML = `<h2>بطاقة الصيد</h2><div class="banner red">تعذّر تصميم البطاقة.</div>`; return; }
+    let url; try { url = cv.toDataURL("image/jpeg", 0.9); } catch (err) { window._ccPhoto = null; return open(e); }  // tainted image → retry without it
+    $("#modalBody").innerHTML = `<h2>🖼️ بطاقة الصيد</h2>
+      <img src="${url}" style="width:100%;border-radius:12px;display:block" alt="بطاقة الصيد">
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="ccShare">📤 مشاركة</button>
+        <a class="btn sec" id="ccSave" href="${url}" download="specter-catch-${e.id}.jpg" style="text-decoration:none">⬇️ حفظ</a>
+        <label class="btn sec" style="cursor:pointer">📷 صورتك<input type="file" accept="image/*" id="ccPhoto" style="display:none"></label></div>
+      <div class="mute" style="margin-top:6px">لا تظهر إحداثيات المكان في البطاقة، والصورة تُعاد رسمها فتُحذف منها بيانات الموقع. وإن لم يعمل الحفظ، اضغط على البطاقة مطوّلاً واحفظها.</div>`;
+    $("#ccPhoto").onchange = async ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      window._ccPhoto = typeof resizeToDataURL === "function" ? await resizeToDataURL(file, 1400) : URL.createObjectURL(file);
+      open(e);
+    };
+    $("#ccShare").onclick = async () => {
+      try {
+        const blob = await (await fetch(url)).blob(), file = new File([blob], "specter-catch.jpg", {type: "image/jpeg"});
+        if (navigator.canShare && navigator.canShare({files: [file]})) await navigator.share({files: [file], text: "صيدي اليوم 🎣 — Specter Angler BH"});
+        else { $("#ccSave").click(); }
+      } catch (err) { if (err.name !== "AbortError") $("#ccSave").click(); }
+    };
+  }
+  document.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-ccard]"); if (!b) return;
+    const e = (typeof LOG !== "undefined") && LOG.find(x => String(x.id) === b.dataset.ccard); if (!e) return;
+    window._ccPhoto = null; open(e);
+  });
+})();

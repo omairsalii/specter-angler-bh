@@ -1,5 +1,5 @@
 /* Specter Angler BH — offline support */
-const VER = "sab-v2.7";
+const VER = "sab-v2.8";
 const SHELL = ["./", "./index.html", "./tide.js", "./visuals.js", "./gear.js", "./beginner.js", "./motion.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VER).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
