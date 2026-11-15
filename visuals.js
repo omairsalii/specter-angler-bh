@@ -106,6 +106,7 @@ function lureCard(key, compact) {
   return `<div class="lure"><div class="lureimg">${lureMedia(key)}<div class="lcred">${lureCredit(key)}</div></div>
     <div style="flex:1"><div style="font-weight:700">${L.name}</div>
     ${compact ? "" : `<div class="mute">${L.desc}</div>`}
+    <a href="#" data-lmotion="${key}" style="color:var(--acc2);font-size:13px;font-weight:700">🎬 شاهد حركته في الماء</a><br>
     <a href="${ytSearch(L.q)}" target="_blank" rel="noopener" style="color:var(--acc);font-size:13px">▶ شاهد أمثلة وطريقة الاستعمال</a><br>
     <label style="color:var(--acc);font-size:13px;cursor:pointer">📷 أضف صورة طعمك<input type="file" accept="image/*" data-addphoto="lure_${key}" style="display:none"></label></div></div>`;
 }

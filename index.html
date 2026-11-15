@@ -80,6 +80,18 @@ ol.steps li{margin-bottom:6px}
 .lph.err{background:none}.lph.err img{display:none}.lph.err .fallback{display:block}
 .lcred{font-size:9px;color:var(--mute);margin-top:3px;line-height:1.4}
 .kstep{width:100%;height:auto;background:#0b1f33;border-radius:10px;display:block}
+#seaWrap{position:relative;margin:-14px -14px 12px;border-radius:14px 14px 0 0;overflow:hidden}
+#seaWrap canvas{display:block}
+#seaLabel{position:absolute;inset-inline-start:8px;bottom:8px;display:flex;gap:6px;flex-wrap:wrap}
+#seaLabel span{background:rgba(5,20,35,.62);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:3px 8px;border-radius:20px;font-size:12px;color:#fff}
+.lmotion{margin:-4px 0 10px;border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--bg2)}
+.lmotion canvas{display:block;border-radius:8px;width:100%}
+.score.pop{animation:pop .45s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+.view.on{animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.btn{transition:transform .12s ease,filter .2s}.btn:active{transform:scale(.95);filter:brightness(1.15)}
+@media (prefers-reduced-motion: reduce){.view.on,.score.pop{animation:none}}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
@@ -130,7 +142,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.6</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.7</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -289,7 +301,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 2.6 — Specter Angler BH</p>
+    <p class="mute">الإصدار 2.7 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -309,7 +321,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="tide.js?v=2.6"></script>
-<script src="visuals.js?v=2.5"></script>
+<script src="visuals.js?v=2.7"></script>
 <script src="gear.js?v=2.5"></script>
 <script>
 "use strict";
@@ -968,8 +980,8 @@ function renderNow(){
   if(!SCORED.length) return;
   const tc = $("#tideCard"); const th = tideHtml(RECORDS, false); tc.innerHTML = th; tc.style.display = th ? "block" : "none";
   const cur = curScored();
-  $("#nowScore").textContent = cur.score;
-  $("#nowScore").style.color = scoreColor(cur.score);
+  if(window.countUp) countUp($("#nowScore"), cur.score, scoreColor(cur.score)); else { $("#nowScore").textContent = cur.score; $("#nowScore").style.color = scoreColor(cur.score); }
+  if(window.updateSea) updateSea(RECORDS, cur, 26.1, 50.55);
   const bw = bestWindow(SCORED);
   $("#bestWin").textContent = bw ? fmtH(bw.row.t)+" – "+fmtH(new Date(bw.row.t.getTime()+2*36e5)) : "—";
   const start = SCORED.findIndex(x=>x===cur);
@@ -1584,5 +1596,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
 }
 </script>
 <script src="beginner.js?v=2.5"></script>
+<script src="motion.js?v=2.7"></script>
 </body>
 </html>
