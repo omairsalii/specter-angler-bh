@@ -108,6 +108,10 @@ ol.steps li{margin-bottom:6px}
 .kpdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.kpdots i{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer}.kpdots i.on{background:var(--acc)}
 @keyframes kdraw{to{stroke-dashoffset:0}}
 @keyframes kfade{to{opacity:1}}
+.lthumbs{display:flex;gap:6px;flex-wrap:wrap}
+.lthumbs .th{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);cursor:pointer}
+.lthumbs .th img{width:100%;height:100%;object-fit:cover;display:block}
+.lthumbs .th b{position:absolute;top:2px;inset-inline-start:2px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:flex;align-items:center;justify-content:center}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
@@ -158,7 +162,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.9</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.0</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -290,6 +294,12 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </div>
     <label class="f">ملاحظات</label>
     <textarea id="lgNote" rows="2" placeholder="مثلاً: ضربات قرب نهاية الكاسر مع بداية المدّ"></textarea>
+    <label class="f">صور الرحلة (حتى 4)</label>
+    <div class="row" style="gap:8px">
+      <label class="btn sec sm" style="cursor:pointer">📷 التقط صورة<input type="file" accept="image/*" capture="environment" id="lgCam" style="display:none"></label>
+      <label class="btn sec sm" style="cursor:pointer">🖼️ من الألبوم<input type="file" accept="image/*" multiple id="lgGal" style="display:none"></label>
+    </div>
+    <div id="lgThumbs" class="lthumbs" style="margin-top:8px"></div>
     <label class="row" style="margin-top:10px;gap:10px;cursor:pointer"><span class="switch"><input type="checkbox" id="lgGeo" checked><span></span></span><span>احفظ موقعي الحالي مع الرحلة (إن لم أختر نقطة)</span></label>
     <div class="mute" style="margin-top:6px">تُحفظ ظروف البحر لحظة التسجيل تلقائياً مع الرحلة.</div>
     <div class="row" style="margin-top:10px"><button class="btn" id="btnLog">حفظ</button></div>
@@ -317,7 +327,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 2.9 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.0 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -1535,6 +1545,26 @@ function fillLogFish(){
 }
 function nowLocalInput(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
 $("#lgTime").value = nowLocalInput();
+/* ---------------- Trip photos (IndexedDB, re-encoded so GPS/EXIF is stripped) ---------------- */
+const PDB = (()=>{
+  let dbp = null;
+  const db = ()=> dbp || (dbp = new Promise((res,rej)=>{ const r=indexedDB.open("sab-photos",1); r.onupgradeneeded=()=>r.result.createObjectStore("p"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }));
+  const tx = async (mode, fn)=>{ const d=await db(); return new Promise((res,rej)=>{ const t=d.transaction("p",mode), st=t.objectStore("p"); const out=fn(st); t.oncomplete=()=>res(out&&out.result); t.onerror=()=>rej(t.error); }); };
+  return { put:(k,v)=>tx("readwrite",st=>st.put(v,k)), get:k=>tx("readonly",st=>st.get(k)), del:k=>tx("readwrite",st=>st.delete(k)) };
+})();
+window.logPhoto = (id,i=0)=>PDB.get(id+"_"+i).catch(()=>null);
+let PENDING = [];
+function renderPending(){
+  $("#lgThumbs").innerHTML = PENDING.map((p,i)=>`<div class="th" data-rmp="${i}"><img src="${p}" alt=""><b>✕</b></div>`).join("");
+}
+async function addPending(files){
+  for(const f of [...files]){ if(PENDING.length>=4){ toast("الحدّ 4 صور للرحلة"); break; } try{ PENDING.push(await resizeToDataURL(f, 1400)); }catch(e){ toast("تعذّر قراءة الصورة"); } }
+  renderPending();
+}
+$("#lgCam").onchange = e=>{ addPending(e.target.files); e.target.value=""; };
+$("#lgGal").onchange = e=>{ addPending(e.target.files); e.target.value=""; };
+$("#lgThumbs").onclick = e=>{ const t=e.target.closest("[data-rmp]"); if(!t) return; PENDING.splice(+t.dataset.rmp,1); renderPending(); };
+
 $("#btnLog").onclick = async ()=>{
   const sid = $("#lgSpot").value, all=[...mySpots,...spots], sp = all.find(s=>s.id===sid);
   let pos = sp ? {lat:sp.lat, lng:sp.lng} : null;
@@ -1549,7 +1579,10 @@ $("#btnLog").onclick = async ()=>{
   if(best && dd<3*36e5) cond = {score:best.score, tide:best.row.tideState, wind:best.row.wind, wave:best.row.wave, sst:best.row.sst, light:best.row.lightK, moon:moonName(best.moon)};
   const fishId = $("#lgFish").value;
   if(fishId){ const f = FISH.find(x=>x.id===fishId); if(f && banActive(f,t)) toast("تنبيه: "+fname(f)+" ممنوع صيده في هذه الفترة، أطلقه"); }
-  LOG.unshift({ id:Date.now(), t:t.toISOString(), spot: sp?sp.name:"", spotId:sid, lure:$("#lgLure").value, color:$("#lgColor").value, fish:fishId, count:+$("#lgCount").value||0, note:$("#lgNote").value.trim(), cond, lat: pos?pos.lat:null, lng: pos?pos.lng:null });
+  const newId = Date.now(), nPh = PENDING.length;
+  for(let i=0;i<nPh;i++){ try{ await PDB.put(newId+"_"+i, PENDING[i]); }catch(e){ toast("تعذّر حفظ إحدى الصور"); } }
+  PENDING = []; renderPending();
+  LOG.unshift({ id:newId, photos:nPh, t:t.toISOString(), spot: sp?sp.name:"", spotId:sid, lure:$("#lgLure").value, color:$("#lgColor").value, fish:fishId, count:+$("#lgCount").value||0, note:$("#lgNote").value.trim(), cond, lat: pos?pos.lat:null, lng: pos?pos.lng:null });
   store.set("log", LOG); $("#lgNote").value=""; $("#lgCount").value=0; $("#lgTime").value = nowLocalInput();
   renderLog(); renderLastCatch(); toast("حُفظت الرحلة"+(pos?" مع موقعها":""));
 };
@@ -1560,10 +1593,13 @@ function renderLog(){
       <div class="dot" style="background:${e.count>0?"var(--good)":"#4a5d70"}">${e.count}</div>
       <div style="flex:1"><div style="font-weight:700">${e.spot?esc(e.spot):"رحلة"} — ${new Date(e.t).toLocaleDateString("ar-BH-u-nu-latn")} ${fmtH(new Date(e.t))}</div>
       <div class="mute">${e.lure} · ${e.color}${f?" · "+fname(f):""}${e.cond?` · ${e.cond.tide||""}`:""}</div>
-      ${e.note?`<div class="mute">${esc(e.note)}</div>`:""}</div>
+      ${e.note?`<div class="mute">${esc(e.note)}</div>`:""}
+      ${e.photos?`<div class="lthumbs" style="margin-top:6px" data-phs="${e.id}" data-n="${e.photos}">${Array.from({length:e.photos},(_,i)=>`<div class="th" data-view="${e.id}_${i}"></div>`).join("")}</div>`:""}</div>
       <div style="display:flex;flex-direction:column;gap:6px">${e.lat!=null?`<a class="btn sm" href="${navUrl(e.lat,e.lng)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">🧭</a>`:""}<button class="btn sm" data-ccard="${e.id}" title="بطاقة الصيد">🖼️</button><button class="btn sec sm" data-del="${e.id}">حذف</button></div></div>`;
   }).join("") : `<div class="mute">لا رحلات بعد.</div>`;
-  $$("[data-del]").forEach(b=>b.onclick=()=>{ LOG = LOG.filter(x=>x.id!=+b.dataset.del); store.set("log",LOG); renderLog(); renderLastCatch(); });
+  $$("[data-phs]").forEach(box=>{ for(let i=0;i<+box.dataset.n;i++) PDB.get(box.dataset.phs+"_"+i).then(src=>{ const th=box.children[i]; if(th && src) th.innerHTML=`<img src="${src}" alt="">`; }).catch(()=>{}); });
+  $$("[data-view]").forEach(th=>th.onclick=()=>{ const im=th.querySelector("img"); if(im) openModal(`<img src="${im.src}" style="width:100%;border-radius:12px;display:block" alt="">`); });
+  $$("[data-del]").forEach(b=>b.onclick=()=>{ const ent=LOG.find(x=>x.id==+b.dataset.del); if(ent&&ent.photos) for(let i=0;i<ent.photos;i++) PDB.del(ent.id+"_"+i).catch(()=>{}); LOG = LOG.filter(x=>x.id!=+b.dataset.del); store.set("log",LOG); renderLog(); renderLastCatch(); });
   // stats
   if(LOG.length>=3){
     const agg = key => { const m={}; LOG.forEach(e=>{ const k=key(e); if(!k) return; m[k]=m[k]||{trips:0,fish:0}; m[k].trips++; m[k].fish+=e.count; }); return Object.entries(m).sort((a,b)=>(b[1].fish/b[1].trips)-(a[1].fish/a[1].trips)); };
@@ -1614,6 +1650,6 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
 }
 </script>
 <script src="beginner.js?v=2.5"></script>
-<script src="motion.js?v=2.9"></script>
+<script src="motion.js?v=3.0"></script>
 </body>
 </html>

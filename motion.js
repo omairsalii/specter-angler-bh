@@ -460,6 +460,7 @@
   document.addEventListener("click", ev => {
     const b = ev.target.closest("[data-ccard]"); if (!b) return;
     const e = (typeof LOG !== "undefined") && LOG.find(x => String(x.id) === b.dataset.ccard); if (!e) return;
-    window._ccPhoto = null; open(e);
+    window._ccPhoto = null;
+    if (e.photos && window.logPhoto) logPhoto(e.id, 0).then(src => { window._ccPhoto = src || null; open(e); }); else open(e);
   });
 })();
