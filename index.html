@@ -217,7 +217,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v4.0</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v4.1</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -233,7 +233,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   <div class="row" style="margin-bottom:12px">
     <button class="btn sm" id="btnNearest" style="background:var(--acc2)">🎯 أقرب أفضل المواقع</button>
     <button class="btn sm" id="btnLocate">📍 موقعي</button>
-    <button class="btn sm" id="btnScan">مسح الساحل عن نقاط مرشّحة</button>
+    <button class="btn sm" id="btnScan" style="display:none">مسح الساحل عن نقاط مرشّحة</button>
     <button class="btn sm sec" id="btnAdd">+ أضف نقطتي</button>
     <button class="btn sm sec" id="btnLayer">صور فضائية / خريطة</button>
   </div>
@@ -258,9 +258,10 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   <div class="card" id="tideCard" style="display:none"></div>
 
   <div class="card">
-    <h2>أفضل النقاط الآن</h2>
-    <div class="mute" id="spotsNote">اضغط «مسح الساحل» لاستخراج النقاط المرشّحة، أو أضف نقاطك.</div>
+    <h2>نقاطي (مرتّبة حسب الأفضل الآن)</h2>
+    <div class="mute" id="spotsNote">لا نقاط بعد. اضغط «+ أضف نقطتي» ثم المكان على الخريطة، فيحفظه التطبيق ويقيّمه تلقائياً حسب الظروف والمعطيات حوله.</div>
     <div id="spotList"></div>
+    <div class="row" style="margin-top:10px"><button class="btn sec sm" id="btnSpotsBackup">💾 نسخة من نقاطي</button></div>
   </div>
 </section>
 
@@ -382,7 +383,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 4.0 — Specter Angler BH</p>
+    <p class="mute">الإصدار 4.1 — Specter Angler BH</p>
     <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
   </div>
 </section>
@@ -785,10 +786,10 @@ async function nearestBest(){
   let me;
   try{ me = await getPosition(); lastMe = me; }
   catch(e){ toast(geoErrMsg(e)); b.disabled=false; b.textContent=label; return; }
-  if(!spots.length){ b.textContent="جارٍ مسح الساحل…"; await scanCoast(); }
+  if(SHOW_SCANNED && !spots.length){ b.textContent="جارٍ مسح الساحل…"; await scanCoast(); }
   b.disabled=false; b.textContent=label;
-  const all=[...mySpots, ...spots];
-  if(!all.length){ toast("لا توجد نقاط بعد؛ أضف نقاطك أو أعد مسح الساحل"); return; }
+  const all=[...mySpots, ...shownScanned()];
+  if(!all.length){ toast("لا توجد نقاط بعد؛ أضف نقاط صيدك أولاً من «+ أضف نقطتي»"); return; }
   const ranked = all.map(s=>{ const km=kmBetween(me,s), sc=spotScore(s); return {...s, km, sc, rank: sc*Math.exp(-km/12)}; })
     .sort((a,b)=>b.rank-a.rank).slice(0,6);
   if(map){
@@ -861,7 +862,7 @@ out geom tags;`;
     ev.ok = true;
   }catch(e){ ev.ok = false; }
   // nearest scanned candidate
-  if(spots.length){
+  if(SHOW_SCANNED && spots.length){
     let n=null, d=1e9; spots.forEach(c=>{ const k=kmBetween(sp,c); if(k<d){d=k;n=c;} });
     if(n) ev.nearest = {name:n.name, km:d, id:n.id};
   }
@@ -986,7 +987,7 @@ function curScored(){
   return best;
 }
 function renderSpots(){
-  const all = [...mySpots, ...spots].map(s=>({...s, sc: spotScore(s)})).sort((a,b)=>b.sc-a.sc);
+  const all = [...mySpots, ...shownScanned()].map(s=>({...s, sc: spotScore(s)})).sort((a,b)=>b.sc-a.sc);
   if(spotLayer){
     spotLayer.clearLayers();
     all.forEach(s=>{
@@ -1005,6 +1006,9 @@ function renderSpots(){
     </div>`).join("");
   $$("#spotList .spot").forEach(el=>el.onclick=()=>{ const s = all.find(x=>x.id===el.dataset.id); if(map) map.setView([s.lat,s.lng],15); openSpot(s); });
 }
+// Auto-scanned coastline candidates are hidden: many are private or closed to fishing. Only the angler's own spots are shown.
+const SHOW_SCANNED = false;
+function shownScanned(){ return SHOW_SCANNED ? spots : []; }
 function countAr(n){ return n===1?"نقطة واحدة": n===2?"نقطتان": (n>=3&&n<=10)? n+" نقاط" : n+" نقطة"; }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
@@ -1033,6 +1037,7 @@ async function openSpot(s){
       <div><div class="mute">المؤشر الآن</div><div class="score" style="color:${scoreColor(nowS)}">${nowS}</div></div>
       <div style="text-align:left"><div class="mute">أفضل وقت اليوم</div><div style="font-weight:800;font-size:18px">${bw?fmtH(bw.row.t):"—"}</div></div>
     </div>
+    ${s.mine ? `<div class="mute" style="font-size:12px;margin-top:6px">🔒 نقطة خاصة بك: محفوظة في جوالك فقط ولا يراها أحد.</div>` : ""}
     ${s.mine ? (s.eval ? evalHtml(s) : `<div class="banner">هذه نقطتك ولم تُقيَّم بعد. <button class="btn sm" data-reeval="${s.id}">قيّمها الآن</button></div>`) : ""}
     ${!s.mine && reasons.length?`<h3>لماذا رُشّحت؟</h3><ul>${reasons.map(r=>`<li>${r}</li>`).join("")}</ul>`:""}
     ${cur?factorChips(cur):""}
@@ -1602,7 +1607,7 @@ document.addEventListener("click", e=>{
    ========================================================= */
 let LOG = store.get("log", []);
 function fillLogSpots(){
-  const all = [...mySpots, ...spots];
+  const all = [...mySpots, ...shownScanned()];
   $("#lgSpot").innerHTML = `<option value="">— بدون نقطة محددة —</option>` + all.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
 }
 function fillLogFish(){
@@ -1678,6 +1683,37 @@ $("#btnExport").onclick = async ()=>{
   try{ await navigator.clipboard.writeText(data); toast("نُسخت النسخة الاحتياطية، الصقها في ملاحظاتك أو بريدك"); }
   catch(e){ openModal(`<h2>نسخة احتياطية</h2><p class="mute">انسخ النص التالي واحفظه:</p><textarea rows="8">${esc(data)}</textarea>`); }
 };
+/* ---------------- My spots: private copy (backup file, GPX for other map apps, restore) ---------------- */
+async function saveFile(name, text, mime){
+  const blob = new Blob([text], {type:mime}), file = new File([blob], name, {type:mime});
+  try{ if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return; } }catch(e){ if(e.name==="AbortError") return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+const xmlEsc = t => String(t).replace(/[<>&"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+$("#btnSpotsBackup").onclick = ()=>{
+  const n = mySpots.length, day = new Date().toISOString().slice(0,10);
+  openModal(`<h2>💾 نسخة من نقاطي</h2>
+    <div class="banner">🔒 نقاطك خاصة بك: محفوظة في جوالك فقط ولا يراها أحد غيرك. عندك الآن ${countAr(n)}.</div>
+    <h3>خذ نسخة</h3>
+    <div class="row"><button class="btn sm" id="spJson" ${n?"":"disabled"}>⬇️ ملف نسخة احتياطية</button><button class="btn sec sm" id="spGpx" ${n?"":"disabled"}>🗺️ ملف GPX للخرائط</button></div>
+    <div class="mute" style="font-size:12px;margin-top:6px">ملف النسخة الاحتياطية تسترجع منه نقاطك في هذا التطبيق، مع أسمائها وتقييمها ومعايرة المدّ. وملف GPX يفتح في Google Earth وتطبيقات الملاحة مثل OsmAnd و Navionics. احفظ الملف في مكان آمن، فمن يحصل عليه يرى أماكنك.</div>
+    <h3>استرجاع</h3>
+    <label class="btn sec sm" style="cursor:pointer">📥 استرجع من ملف نسخة<input type="file" accept=".json,application/json" id="spRestore" style="display:none"></label>
+    <div class="mute" style="font-size:12px;margin-top:6px">تُضاف النقاط إلى نقاطك الحالية، ولا تُكرَّر الموجودة.</div>`);
+  $("#spJson").onclick = ()=> saveFile(`specter-spots-${day}.json`, JSON.stringify({app:"Specter Angler BH", type:"myspots", v:2, date:new Date().toISOString(), myspots:mySpots, tidecal:store.get("tidecal",[])}, null, 1), "application/json");
+  $("#spGpx").onclick = ()=> saveFile(`specter-spots-${day}.gpx`, `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Specter Angler BH" xmlns="http://www.topografix.com/GPX/1/1">\n`+
+      mySpots.map(p=>`<wpt lat="${(+p.lat).toFixed(6)}" lon="${(+p.lng).toFixed(6)}"><name>${xmlEsc(p.name)}</name><desc>${xmlEsc(TYPE_AR[p.type]||"")}</desc><sym>Fishing Hot Spot Facility</sym></wpt>`).join("\n")+`\n</gpx>\n`, "application/gpx+xml");
+  $("#spRestore").onchange = async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{ const d=JSON.parse(await f.text()); const arr = Array.isArray(d.myspots)?d.myspots:[]; let add=0;
+      arr.forEach(p=>{ if(p && p.lat!=null && p.lng!=null && !mySpots.some(x=>x.id===p.id || (Math.abs(x.lat-p.lat)<1e-5 && Math.abs(x.lng-p.lng)<1e-5))){ mySpots.push({...p, mine:true}); add++; } });
+      store.set("myspots", mySpots);
+      if(Array.isArray(d.tidecal) && d.tidecal.length){ const cur=store.get("tidecal",[]); d.tidecal.forEach(c=>{ if(!cur.some(x=>kmBetween(x,c)<1.5)) cur.push(c); }); store.set("tidecal",cur); }
+      closeModal(); renderSpots(); fillLogSpots(); toast(add ? `استُرجعت ${countAr(add)}` : "كل النقاط موجودة مسبقاً");
+    }catch(err){ toast("الملف غير صالح"); }
+  };
+};
+
 $("#btnImport").onclick = ()=>{
   openModal(`<h2>استيراد</h2><textarea id="impTxt" rows="8" placeholder="الصق النسخة الاحتياطية هنا"></textarea><div class="row" style="margin-top:10px"><button class="btn" id="impGo">استيراد</button></div>`);
   $("#impGo").onclick = ()=>{
@@ -1711,7 +1747,7 @@ setInterval(loadConditions, 30*60*1000);
 try{ if(window.caches) caches.delete("sab-gallery-v1"); Object.keys(localStorage).filter(k=>k.startsWith("sab_gal_")).forEach(k=>localStorage.removeItem(k)); }catch(e){}
 
 /* ---------------- Update check (works for the website and the Android app) ---------------- */
-const APP_VER = "4.0";
+const APP_VER = "4.1";
 const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 async function checkUpdate(manual){
   try{
@@ -1736,7 +1772,7 @@ if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capac
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; reloaded=true; location.reload(); });
 }
 </script>
-<script src="beginner.js?v=2.5"></script>
+<script src="beginner.js?v=4.1"></script>
 <script src="knots3d.js?v=3.7"></script>
 <script src="motion.js?v=3.5"></script>
 </body>
