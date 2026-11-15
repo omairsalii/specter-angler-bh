@@ -167,21 +167,6 @@ ol.steps li{margin-bottom:6px}
 .k3view{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}.k3view .mute{font-size:12px;width:100%}.k3view .btn.on{background:var(--acc);color:#04201d}
 .k3c{cursor:grab}.k3c:active{cursor:grabbing}
 .k3steps{display:flex;gap:6px;margin-inline-start:auto}.k3steps i{width:10px;height:10px;border-radius:50%;background:var(--line);cursor:pointer}.k3steps i.on{background:var(--acc)}
-.galbtn{background:none;border:1px solid var(--acc);color:var(--acc);border-radius:20px;padding:3px 10px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
-.galbtn:active{transform:scale(.95)}
-.galrow{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
-.gpbtns{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-.galx{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;border-radius:12px;background:#06121e}
-.galx::-webkit-scrollbar{display:none}
-.gals{flex:0 0 100%;margin:0;scroll-snap-align:center}
-.galimg{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:#0b1f33;position:relative}
-.galimg::after{content:"";position:absolute;width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin 1s linear infinite}
-.galimg.ok::after{display:none}
-.galimg img{max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .4s}.galimg.ok img{opacity:1}
-@keyframes spin{to{transform:rotate(360deg)}}
-.gals figcaption{padding:8px 10px;font-size:12px;direction:ltr;text-align:left}.gald{color:var(--ink);opacity:.85}.galc{color:var(--mute);font-size:11px;margin-top:3px}.galc a{color:var(--acc)}
-.galdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.galdots i{width:8px;height:8px;border-radius:50%;background:var(--line);cursor:pointer}.galdots i.on{background:var(--acc);width:18px;border-radius:4px}
-.gal-load{display:flex;align-items:center;gap:10px;color:var(--mute);padding:30px 0;justify-content:center}.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin 1s linear infinite;display:inline-block}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
@@ -232,7 +217,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.8</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.7</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -397,11 +382,8 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 3.8 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.7 — Specter Angler BH</p>
     <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
-    <h3>الصور دون إنترنت</h3>
-    <p class="mute">صور الأمثلة (المعدّات والملحقات والطُّعوم) تُحفظ في جوالك أول مرة تفتحها. ولتحفظها كلها مرة واحدة، اضغط الزر وأنت على الواي فاي (نحو 3–5 ميغابايت).</p>
-    <button class="btn sm" id="btnGalAll">⬇️ نزّل كل الصور للاستخدام دون إنترنت</button> <span class="mute" id="galCount"></span>
   </div>
 </section>
 
@@ -420,12 +402,11 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="gallery.js?v=3.8"></script>
 <script src="tide.js?v=2.6"></script>
 <script src="solunar.js?v=3.4"></script>
 <script src="tidepro.js?v=3.4"></script>
-<script src="visuals.js?v=3.8"></script>
-<script src="gear.js?v=3.8"></script>
+<script src="visuals.js?v=2.7"></script>
+<script src="gear.js?v=2.5"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -1726,19 +1707,8 @@ fillLogSpots(); fillLogFish();
 renderAll();
 loadConditions();
 setInterval(loadConditions, 30*60*1000);
-/* ---------------- Offline photo pack ---------------- */
-(async()=>{ const el=$("#galCount"); if(el && window.Gallery){ const n=await Gallery.cachedCount(); if(n) el.textContent=`(محفوظ: ${n} صورة)`; } })();
-$("#btnGalAll") && ($("#btnGalAll").onclick = async ()=>{
-  const b=$("#btnGalAll"); if(!window.Gallery) return; if(!navigator.onLine) return toast("تحتاج اتصالاً بالإنترنت لتنزيل الصور");
-  // render the gear, accessories and lure pages once so every gallery is registered
-  try{ const tmp=document.createElement("div"); tmp.style.display="none"; tmp.innerHTML=(typeof gearHtml==="function"?gearHtml():"")+(typeof accHtml==="function"?accHtml():"")+(typeof LURES!=="undefined"?Object.keys(LURES).map(k=>lureCard(k)).join(""):""); }catch(e){}
-  b.disabled=true;
-  const n=await Gallery.prefetchAll((d,all,imgs)=>{ b.textContent=`⏳ ${d} من ${all} أصناف · ${imgs} صورة`; });
-  b.disabled=false; b.textContent="✅ تم: الصور محفوظة دون إنترنت"; $("#galCount").textContent=`(محفوظ: ${await Gallery.cachedCount()} صورة)`; toast(`حُفظت ${n} صورة`);
-});
-
 /* ---------------- Update check (works for the website and the Android app) ---------------- */
-const APP_VER = "3.8";
+const APP_VER = "3.7";
 const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 async function checkUpdate(manual){
   try{

@@ -101,15 +101,12 @@ function lureCredit(key) {
   if (!ph) return "رسم توضيحي — أضف صورة طعمك";
   return `صورة: ${ph.by ? ph.by + " · " : ""}${ph.lic ? ph.lic + " · " : ""}<a href="${_cPage(ph.file)}" target="_blank" rel="noopener" style="color:var(--acc)">Wikimedia Commons</a>`;
 }
-const LURE_GAL = {popper: "popper fishing lure", stickbait: "stickbait topwater lure", float_minnow: "minnow crankbait lure", sink_minnow: "sinking minnow lure", jig: "metal jig lure", paddle: "soft plastic paddle tail lure", weedless: "soft plastic lure weedless hook", spoon: "spoon fishing lure"};
-const LURE_CATS = {popper: ["Poppers (fishing lures)"], float_minnow: ["Crankbaits"], sink_minnow: ["Crankbaits"], jig: ["Jigs (fishing)"], paddle: ["Soft plastic lures"], weedless: ["Soft plastic lures"], spoon: ["Spoon lures"]};
 function lureCard(key, compact) {
   const L = LURES[key];
   return `<div class="lure"><div class="lureimg">${lureMedia(key)}<div class="lcred">${lureCredit(key)}</div></div>
     <div style="flex:1"><div style="font-weight:700">${L.name}</div>
     ${compact ? "" : `<div class="mute">${L.desc}</div>`}
     <a href="#" data-lmotion="${key}" style="color:var(--acc2);font-size:13px;font-weight:700">🎬 شاهد حركته في الماء</a><br>
-    ${window.Gallery ? `<a href="#" data-gal="${encodeURIComponent(JSON.stringify(Gallery.spec(L.name, LURE_GAL[key] || L.q, LURE_CATS[key] || [], {web: ytSearch(L.q)})))}" style="color:var(--acc);font-size:13px;font-weight:700">📷 صور أكثر لهذا الطعم</a><br>` : ""}
     <a href="${ytSearch(L.q)}" target="_blank" rel="noopener" style="color:var(--acc);font-size:13px">▶ شاهد أمثلة وطريقة الاستعمال</a><br>
     <label style="color:var(--acc);font-size:13px;cursor:pointer">📷 أضف صورة طعمك<input type="file" accept="image/*" data-addphoto="lure_${key}" style="display:none"></label></div></div>`;
 }
