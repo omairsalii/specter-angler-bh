@@ -64,6 +64,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon || (echo "retrying after 60s"; sleep 60; ./gradlew assembleDebug --no-daemon) || (sleep 120; ./gradlew assembleDebug --no-daemon)
           cp app/build/outputs/apk/debug/app-debug.apk ../SpecterAngler-BH.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../SpecterAngler-BH-1.${{ github.run_number }}.apk
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -71,7 +72,9 @@ jobs:
           tag_name: v1.${{ github.run_number }}
           name: Specter Angler BH 1.${{ github.run_number }}
           make_latest: true
-          files: SpecterAngler-BH.apk
+          files: |
+            SpecterAngler-BH.apk
+            SpecterAngler-BH-1.${{ github.run_number }}.apk
           body: |
             تطبيق Specter Angler BH للأندرويد.
             حمّل ملف SpecterAngler-BH.apk من الأسفل وثبّته (اسمح بتثبيت التطبيقات من مصادر غير معروفة عند الطلب).
