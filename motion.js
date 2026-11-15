@@ -373,7 +373,7 @@
     for (const w of words) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > maxW && line) { ctx.fillText(line, x, y + n * lh); line = w; n++; } else line = t; }
     if (line) { ctx.fillText(line, x, y + n * lh); n++; } return n;
   }
-  async function render(e, photo) {
+  async function render(e, photo, showLoc) {
     await (document.fonts ? document.fonts.ready : Promise.resolve());
     const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
     const ctx = cv.getContext("2d"); ctx.direction = "rtl";
@@ -408,7 +408,8 @@
       ["📍", e.spot || "البحرين"],
       ["📅", d.toLocaleDateString("ar-BH-u-nu-latn", {weekday: "long", day: "numeric", month: "long"}) + " · " + (typeof fmtH === "function" ? fmtH(d) : d.toLocaleTimeString())],
       ["🎣", [e.lure, e.color].filter(Boolean).join(" · ")],
-      ["🌊", [e.cond && e.cond.tide, e.cond && e.cond.moon && "قمر " + e.cond.moon].filter(Boolean).join(" · ")]
+      ["🌊", [e.cond && e.cond.tide, e.cond && e.cond.moon && "قمر " + e.cond.moon].filter(Boolean).join(" · ")],
+      ["🧭", showLoc && e.lat != null ? `\u2066${(+e.lat).toFixed(5)}, ${(+e.lng).toFixed(5)}\u2069` : ""]
     ].filter(l => l[1]);
     ctx.font = "500 40px Tajawal, system-ui, sans-serif"; let y = 990;
     lines.forEach(([ic, tx]) => { ctx.fillStyle = "#cfe0ee"; const n = wrap(ctx, ic + "  " + tx, W - 60, y, W - 120, 54); y += n * 54 + 10; });
@@ -426,7 +427,9 @@
     const ph = window._ccPhoto || null;
     openModal(`<h2>🖼️ بطاقة الصيد</h2><div class="mute">جارٍ التصميم…</div>`);
     let cv;
-    try { cv = await render(e, ph); } catch (err) { $("#modalBody").innerHTML = `<h2>بطاقة الصيد</h2><div class="banner red">تعذّر تصميم البطاقة.</div>`; return; }
+    const hasLoc = e.lat != null && e.lng != null;
+    let showLoc = false; try { showLoc = hasLoc && localStorage.getItem("sab_ccloc") === "1"; } catch (x) {}
+    try { cv = await render(e, ph, showLoc); } catch (err) { $("#modalBody").innerHTML = `<h2>بطاقة الصيد</h2><div class="banner red">تعذّر تصميم البطاقة.</div>`; return; }
     let url; try { url = cv.toDataURL("image/jpeg", 0.9); } catch (err) { window._ccPhoto = null; return open(e); }  // tainted image → retry without it
     $("#modalBody").innerHTML = `<h2>🖼️ بطاقة الصيد</h2>
       <img src="${url}" style="width:100%;border-radius:12px;display:block" alt="بطاقة الصيد">
@@ -434,7 +437,13 @@
         <button class="btn" id="ccShare">📤 مشاركة</button>
         <a class="btn sec" id="ccSave" href="${url}" download="specter-catch-${e.id}.jpg" style="text-decoration:none">⬇️ حفظ</a>
         <label class="btn sec" style="cursor:pointer">📷 صورتك<input type="file" accept="image/*" id="ccPhoto" style="display:none"></label></div>
-      <div class="mute" style="margin-top:6px">لا تظهر إحداثيات المكان في البطاقة، والصورة تُعاد رسمها فتُحذف منها بيانات الموقع. وإن لم يعمل الحفظ، اضغط على البطاقة مطوّلاً واحفظها.</div>`;
+      <label style="display:flex;flex-wrap:nowrap;margin-top:10px;gap:8px;align-items:center;cursor:${hasLoc ? "pointer" : "default"}">
+        <input type="checkbox" id="ccLoc" style="width:20px;height:20px;flex:none" ${showLoc ? "checked" : ""} ${hasLoc ? "" : "disabled"}> <span>📍 أظهر موقع الصيد في البطاقة</span></label>
+      <div class="mute" style="margin-top:4px">${!hasLoc ? "هذه الرحلة محفوظة بلا موقع، فلا يمكن إظهاره."
+        : showLoc ? "⚠️ الموقع ظاهر: ستُكتب الإحداثيات على البطاقة، ويُرفق رابط الخريطة مع المشاركة، فيستطيع من يراها الوصول إلى مكانك."
+        : "🔒 الموقع مخفي: لا تظهر الإحداثيات في البطاقة، والصورة تُعاد رسمها فتُحذف منها بيانات الموقع المخفية."}
+        وإن لم يعمل الحفظ، اضغط على البطاقة مطوّلاً واحفظها.</div>`;
+    const cl = $("#ccLoc"); if (cl) cl.onchange = () => { try { localStorage.setItem("sab_ccloc", cl.checked ? "1" : "0"); } catch (x) {} open(e); };
     $("#ccPhoto").onchange = async ev => {
       const file = ev.target.files[0]; if (!file) return;
       window._ccPhoto = typeof resizeToDataURL === "function" ? await resizeToDataURL(file, 1400) : URL.createObjectURL(file);
@@ -443,7 +452,7 @@
     $("#ccShare").onclick = async () => {
       try {
         const blob = await (await fetch(url)).blob(), file = new File([blob], "specter-catch.jpg", {type: "image/jpeg"});
-        if (navigator.canShare && navigator.canShare({files: [file]})) await navigator.share({files: [file], text: "صيدي اليوم 🎣 — Specter Angler BH"});
+        if (navigator.canShare && navigator.canShare({files: [file]})) await navigator.share({files: [file], text: "صيدي اليوم 🎣 — Specter Angler BH" + (showLoc ? `\n📍 https://www.google.com/maps?q=${e.lat},${e.lng}` : "")});
         else { $("#ccSave").click(); }
       } catch (err) { if (err.name !== "AbortError") $("#ccSave").click(); }
     };
