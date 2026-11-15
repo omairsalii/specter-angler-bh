@@ -1,5 +1,5 @@
 /* Specter Angler BH — offline support */
-const VER = "sab-v3.1";
+const VER = "sab-v3.2";
 const SHELL = ["./", "./index.html", "./tide.js", "./tidepro.js", "./visuals.js", "./gear.js", "./beginner.js", "./motion.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VER).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -16,7 +16,9 @@ self.addEventListener("fetch", e => {
   // App's own files (page, scripts): always fetch the newest copy, bypassing the phone's HTTP cache;
   // fall back to the saved copy only when offline
   if (url.origin === location.origin && (req.mode === "navigate" || /\.(html|js|webmanifest)$/.test(url.pathname) || url.pathname.endsWith("/"))) {
-    e.respondWith(fetch(req, {cache: "no-store"}).then(r => { const c = r.clone(); caches.open(VER).then(x => x.put(req.mode === "navigate" ? "./index.html" : req, c)); return r; })
+    // a unique query string also bypasses GitHub Pages' CDN cache (it keeps files ~10 minutes)
+    const fresh = new URL(req.mode === "navigate" ? "./index.html" : req.url, location.href); fresh.searchParams.set("__cb", Date.now());
+    e.respondWith(fetch(fresh.href, {cache: "no-store"}).then(r => { const c = r.clone(); caches.open(VER).then(x => x.put(req.mode === "navigate" ? "./index.html" : req, c)); return r; })
       .catch(() => caches.match(req.mode === "navigate" ? "./index.html" : req)));
     return;
   }

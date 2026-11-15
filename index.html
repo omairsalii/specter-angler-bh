@@ -148,6 +148,8 @@ ol.steps li{margin-bottom:6px}
 .tp-bar .tp-moon{font-size:12px;min-height:16px}.tp-bar.on{border-color:var(--acc);background:rgba(46,196,182,.12)}
 @keyframes tpgrow{from{transform:scaleY(0)}}
 @media (prefers-reduced-motion: reduce){.tp-line,.tp-area,.tp-bar i,.tp-row,.tp-pulse{animation:none;opacity:1;stroke-dashoffset:0}}
+#updBar{position:fixed;left:10px;right:10px;bottom:76px;z-index:9000;display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,#0f3b52,#13283f);border:1px solid var(--acc);border-radius:14px;padding:10px 12px;box-shadow:0 8px 30px rgba(0,0,0,.45);animation:fadeUp .4s ease}
+#updBar span{flex:1;font-weight:700}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
@@ -198,7 +200,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.1</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.2</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -363,7 +365,8 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 3.1 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.2 — Specter Angler BH</p>
+    <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
   </div>
 </section>
 
@@ -1681,6 +1684,25 @@ fillLogSpots(); fillLogFish();
 renderAll();
 loadConditions();
 setInterval(loadConditions, 30*60*1000);
+/* ---------------- Update check (works for the website and the Android app) ---------------- */
+const APP_VER = "3.2";
+const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
+async function checkUpdate(manual){
+  try{
+    const r = await fetch("https://omairsalii.github.io/specter-angler-bh/version.json?cb="+Date.now(), {cache:"no-store"});
+    const j = await r.json();
+    if(!verGt(j.v, APP_VER)){ if(manual) toast("لديك أحدث إصدار ✓ (v"+APP_VER+")"); return; }
+    let b = $("#updBar"); if(!b){ b=document.createElement("div"); b.id="updBar"; document.body.appendChild(b); }
+    b.innerHTML = window.Capacitor
+      ? `<span>✨ إصدار جديد v${j.v}</span><a class="btn sm" href="${j.apk}" target="_blank" rel="noopener" style="text-decoration:none">تنزيل التحديث</a><button class="btn sec sm" id="updX">✕</button>`
+      : `<span>✨ إصدار جديد v${j.v} جاهز</span><button class="btn sm" id="updGo">حدّث الآن</button><button class="btn sec sm" id="updX">✕</button>`;
+    const g=$("#updGo"); if(g) g.onclick=async ()=>{ g.textContent="جارٍ التحديث…"; try{ const regs=await navigator.serviceWorker?.getRegistrations?.(); if(regs) for(const x of regs) await x.update(); const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){} location.replace(location.pathname+"?u="+Date.now()); };
+    $("#updX").onclick=()=>b.remove();
+  }catch(e){ if(manual) toast("تعذّر التحقق من التحديث، تأكد من الإنترنت"); }
+}
+setTimeout(()=>checkUpdate(false), 2500);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) checkUpdate(false); });
+
 // Offline support (website only; the Android app ships its files inside the APK)
 if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capacitor){
   navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>{ try{ r.update(); }catch(e){} }).catch(()=>{});
