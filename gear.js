@@ -107,6 +107,16 @@ function reelSizeHtml() {
 }
 
 const gSearch = q => "https://www.google.com/search?q=" + encodeURIComponent(q);
+const G = () => window.Gallery;
+const galBtn = (t, q, cats, extra, label) => G() ? G().btn(G().spec(t, q, cats, extra), label) : "";
+// photo galleries shown at the top of each gear section
+const GEAR_GALS = {
+  "القصبة": [["قصبات الصيد", "spinning fishing rod", ["Fishing rods"]], ["حلقات القصبة", "fishing rod guides", ["Fishing rod guides"]], ["مقبض القصبة وحامل البكرة", "fishing rod reel seat handle"]],
+  "البكرة": [["البكرة الدوّارة (Spinning)", "spinning reel", ["Spinning reels"]], ["بكرة البيتكاست (Baitcasting)", "baitcasting reel", ["Baitcasting reels"]], ["البكرة المغلقة (Spincast)", "spincast reel closed face", ["Spincast reels"]]],
+  "قوة البكرة": [["مكوّنات البكرة من الداخل", "fishing reel gears disassembled"], ["الفرامل وبكرة الخيط", "spinning reel spool drag"]],
+  "الخيوط": [["الخيط المضفّر (Braid)", "braided fishing line"], ["خيط القائد الفلوروكربون/النايلون", "monofilament fishing line spool", ["Fishing lines"]], ["المشابك والدوّارات", "fishing swivel snap", ["Fishing swivels"]]]
+};
+const PROD_GENERIC = {reels: "spinning reel", rods: "spinning fishing rod", braid: "braided fishing line", leader: "fishing line spool"};
 
 function gearProductsHtml(cat) {
   return ["eco", "mid", "pro"].map(t => {
@@ -114,7 +124,7 @@ function gearProductsHtml(cat) {
     if (!items.length) return "";
     return `<div style="margin-top:8px"><span class="chip ${t === "pro" ? "warn" : t === "mid" ? "ok" : ""}">${GEAR_TIERS[t]}</span>
       ${items.map(p => `<div class="gp"><div><b>${p.name}</b><div class="mute">${p.note}</div></div>
-        <a href="${gSearch(p.name + " سعر البحرين")}" target="_blank" rel="noopener" class="gpl">السعر ↗</a></div>`).join("")}</div>`;
+        <div class="gpbtns">${galBtn(p.name, p.name, [], {q2: PROD_GENERIC[cat], web: gSearch(p.name + " سعر البحرين")}, "📷")}<a href="${gSearch(p.name + " سعر البحرين")}" target="_blank" rel="noopener" class="gpl">السعر ↗</a></div></div>`).join("")}</div>`;
   }).join("");
 }
 
@@ -143,7 +153,7 @@ function gearHtml() {
       <div class="mute" style="margin-top:6px">${s.eg}</div></div>`).join("")}</div>
 
   ${reelSizeHtml()}
-  ${GEAR_BASICS.map(x => `<div class="card"><h2>كيف تختار ${x.t}؟</h2><ul>${x.b.map(i => `<li>${i}</li>`).join("")}</ul>
+  ${GEAR_BASICS.map(x => `<div class="card"><h2>كيف تختار ${x.t}؟</h2>${(() => { const k = Object.keys(GEAR_GALS).find(k => x.t.startsWith(k)); return k ? `<div class="galrow">${GEAR_GALS[k].map(g => galBtn(g[0], g[1], g[2] || [], {web: gSearch(g[1])}, "📷 " + g[0])).join("")}</div>` : ""; })()}<ul>${x.b.map(i => `<li>${i}</li>`).join("")}</ul>
     ${x.t.startsWith("القصبة") ? gearProductsHtml("rods") : x.t.startsWith("البكرة") ? gearProductsHtml("reels") : x.t.startsWith("قوة البكرة") ? "" : `<h3>المضفّر</h3>${gearProductsHtml("braid")}<h3>القائد</h3>${gearProductsHtml("leader")}`}</div>`).join("")}
 
   <div class="card"><h2>من أين تشتري في البحرين؟</h2><ul>
@@ -213,6 +223,8 @@ const ACCESSORIES = [
     {n: "قبعة وغطاء رقبة (Buff)", w: "حماية من شمس الخليج ساعات طويلة.", q: "fishing buff neck gaiter"},
     {n: "حامل قصبة بالحزام أو للأرض", w: "يريحك حين تغيّر الطعم أو تشرب الماء.", q: "rod holder belt shore fishing"}]}
 ];
+const ACC_CATS = [[/كمّاشة/, ["Fishing pliers"]], [/ماسك الشفة/, ["Fish grips"]], [/مشابك/, ["Fishing swivels", "Split rings"]], [/حافظة/, ["Coolers", "Cool boxes"]], [/شبكة رفع/, ["Landing nets"]], [/Gaff/, ["Gaffs"]],
+  [/كشاف/, ["Headlamps"]], [/إسعافات/, ["First aid kits"]], [/نظارة/, ["Polarized sunglasses"]], [/حذاء/, ["Water shoes"]], [/علبة طُعوم/, ["Tackle boxes"]]];
 const CHECKLIST = ["القصبة والبكرة","علبة الطُّعوم","قائد احتياطي ومشابك","الكمّاشة ومقص المضفّر","ماسك الشفة","حافظة ثلج","الحذاء المانع للانزلاق","كشاف الرأس (للفجر أو الليل)","النظارة المستقطبة والقبعة","ماء وجوال مشحون"];
 function accHtml() {
   let done = {}; try { done = JSON.parse(localStorage.getItem("sab_check") || "{}"); } catch (e) {}
@@ -220,7 +232,7 @@ function accHtml() {
     ${CHECKLIST.map((c, i) => `<label class="row" style="gap:10px;padding:5px 0;cursor:pointer"><input type="checkbox" data-chk="${i}" ${done[i] ? "checked" : ""} style="width:20px;height:20px">${c}</label>`).join("")}
     <button class="btn sec sm" id="chkReset" style="margin-top:8px">تفريغ القائمة</button></div>
   ${ACCESSORIES.map(grp => `<div class="card"><h2>${grp.g}</h2>${grp.items.map(it => `<div class="gp"><div><b>${it.n}</b><div class="mute">${it.w}</div></div>
-    <a href="${gSearch(it.q)}" target="_blank" rel="noopener" class="gpl">أمثلة ↗</a></div>`).join("")}</div>`).join("")}`;
+    ${galBtn(it.n, it.q, ACC_CATS.find(c => c[0].test(it.n))?.[1] || [], {web: gSearch(it.q)})}</div>`).join("")}</div>`).join("")}`;
 }
 function bindAcc() {
   document.querySelectorAll("[data-chk]").forEach(c => c.onchange = () => {
