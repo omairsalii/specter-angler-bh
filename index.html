@@ -112,6 +112,42 @@ ol.steps li{margin-bottom:6px}
 .lthumbs .th{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);cursor:pointer}
 .lthumbs .th img{width:100%;height:100%;object-fit:cover;display:block}
 .lthumbs .th b{position:absolute;top:2px;inset-inline-start:2px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:flex;align-items:center;justify-content:center}
+.tp-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.tp-head h2{margin:0}
+.tp-src{font-size:11px;color:var(--mute);background:var(--bg2);border:1px solid var(--line);padding:2px 8px;border-radius:20px}
+.tp-live{display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:center;gap:6px;margin-top:10px}
+.tp-side{text-align:center;font-size:13px}.tp-side b{display:block;font-size:17px}.tp-cd{color:var(--acc2);font-weight:700;font-size:12px}
+.tp-gauge{position:relative}.tp-gauge svg{width:100%;display:block}
+.tp-needle{transition:transform 1.2s cubic-bezier(.3,1.4,.5,1)}
+.tp-now{text-align:center;line-height:1.15;margin-top:2px}.tp-now span{font-weight:800;font-size:16px;display:block}
+.tp-now em{font-style:normal;font-size:11px;font-weight:700}.tp-now em.up{color:#4da3ff}.tp-now em.down{color:#ffb347}
+.tp-prog{height:6px;background:var(--bg2);border-radius:6px;overflow:hidden;margin:14px 0 8px}.tp-prog i{display:block;height:100%;border-radius:6px;transition:width 1s}
+.tp-win{background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.45);color:#bff5d4;border-radius:10px;padding:7px 10px;font-size:13px}
+.tp-win.soft{background:var(--bg2);border-color:var(--line);color:var(--mute)}
+.tp-days{display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px;gap:8px}
+.tp-days #tpDayName{text-align:center;line-height:1.3}.tp-days #tpDayName b{display:block;font-size:17px}.tp-days #tpDayName span{font-size:12px}
+.tp-arr{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:22px;cursor:pointer}
+.tp-arr:active{transform:scale(.9)}
+.tp-coef{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0}
+.tp-ring{--p:50%;--c:#2ecc71;width:64px;height:64px;flex:none;border-radius:50%;background:conic-gradient(var(--c) var(--p),#1f3a57 0);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.tp-ring::before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--bg2)}
+.tp-ring b,.tp-ring small{position:relative;line-height:1}.tp-ring b{font-size:20px}.tp-ring small{font-size:9px;color:var(--mute)}
+.tp-rows{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.tp-row{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px 8px;animation:fadeUp .3s ease both}
+.tp-row.past{opacity:.5}.tp-row b{font-size:15px}.tp-row .mute{font-size:11px}.tp-h{margin-inline-start:auto;font-size:12px;color:var(--mute);white-space:nowrap}
+.tp-ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+.tp-ic.high{background:rgba(77,163,255,.2);color:#4da3ff}.tp-ic.low{background:rgba(255,179,71,.2);color:#ffb347}
+.tp-chartwrap{position:relative}.tp-svg{width:100%;height:auto;display:block;background:#0b1f33;border-radius:12px;touch-action:pan-y;cursor:crosshair}
+.tp-line{stroke-dasharray:1200;stroke-dashoffset:1200;animation:tpdraw 1.4s ease forwards}.tp-area{animation:kfade .9s ease both;opacity:0}
+@keyframes tpdraw{to{stroke-dashoffset:0}}
+.tp-pulse{animation:tppulse 1.6s infinite;transform-box:fill-box;transform-origin:center}@keyframes tppulse{50%{transform:scale(1.6);opacity:.5}}
+#tpTip{display:none;position:absolute;top:4px;width:120px;background:rgba(5,20,35,.9);border:1px solid var(--acc);border-radius:8px;padding:3px 6px;font-size:11px;text-align:center;pointer-events:none}
+.tp-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mute);margin-top:6px}.tp-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;margin-inline-end:4px}
+.tp-bars{display:flex;gap:4px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x proximity;align-items:flex-end}
+.tp-bar{flex:none;width:38px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;background:none;border:1px solid transparent;border-radius:10px;padding:4px 0;color:var(--ink);font:inherit;cursor:pointer;scroll-snap-align:center}
+.tp-bar i{width:18px;border-radius:5px 5px 2px 2px;transform-origin:bottom;animation:tpgrow .6s ease both}.tp-bar b{font-size:11px}.tp-bar small{font-size:9px;color:var(--mute);line-height:1.1}
+.tp-bar .tp-moon{font-size:12px;min-height:16px}.tp-bar.on{border-color:var(--acc);background:rgba(46,196,182,.12)}
+@keyframes tpgrow{from{transform:scaleY(0)}}
+@media (prefers-reduced-motion: reduce){.tp-line,.tp-area,.tp-bar i,.tp-row,.tp-pulse{animation:none;opacity:1;stroke-dashoffset:0}}
 .kstepbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--bg2)}
 .kstepbox .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04201d;font-weight:800;align-items:center;justify-content:center;margin-inline-end:8px}
 .ph{position:relative;width:120px;height:72px;flex:none;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f2b45,#0b1f33)}
@@ -162,7 +198,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.0</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.1</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -327,7 +363,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 3.0 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.1 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -347,6 +383,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="tide.js?v=2.6"></script>
+<script src="tidepro.js?v=3.1"></script>
 <script src="visuals.js?v=2.7"></script>
 <script src="gear.js?v=2.5"></script>
 <script>
@@ -1004,7 +1041,9 @@ function factorChips(x){
 /* --- Overview card --- */
 function renderNow(){
   if(!SCORED.length) return;
-  const tc = $("#tideCard"); const th = tideHtml(RECORDS, false); tc.innerHTML = th; tc.style.display = th ? "block" : "none";
+  const tc = $("#tideCard");
+  if(window.TidePro && RECORDS && RECORDS[0] && RECORDS[0].tideSrc==="harm"){ tc.style.display="block"; try{ TidePro.render(tc, RECORDS[0].tideOff||0); }catch(e){ console.warn(e); const th=tideHtml(RECORDS,false); tc.innerHTML=th; } }
+  else { const th = tideHtml(RECORDS, false); tc.innerHTML = th; tc.style.display = th ? "block" : "none"; }
   const cur = curScored();
   if(window.countUp) countUp($("#nowScore"), cur.score, scoreColor(cur.score)); else { $("#nowScore").textContent = cur.score; $("#nowScore").style.color = scoreColor(cur.score); }
   if(window.updateSea) updateSea(RECORDS, cur, 26.1, 50.55);
