@@ -335,7 +335,9 @@
   }
   function mount(box) {
     box.dataset.ready = 1;
-    const k = box.dataset.kp, steps = (typeof KNOT_STEPS !== "undefined" && KNOT_STEPS[k]) || [];
+    const k = box.dataset.kp;
+    if (window.Knot3D && Knot3D.has(k)) { box.classList.add("k3"); Knot3D.mount(box, k); return; }
+    const steps = (typeof KNOT_STEPS !== "undefined" && KNOT_STEPS[k]) || [];
     if (!steps.length || !steps.some(s => s.s)) { box.remove(); return; }
     let i = 0, playing = true, timer = 0;
     box.innerHTML = `<div class="kpstage"></div><div class="kpcap"></div>
