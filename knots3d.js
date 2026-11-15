@@ -181,14 +181,32 @@
   })();
 
   /* ---------- renderer ---------- */
-  function drawScene(ctx, def, prog, k, W, Hh) {
-    const v = def.view || [0, VW], s = W / (v[1] - v[0]), oy = Hh / 2 - (def.cy || AY) * s;
-    const P = p => [(p[0] - v[0]) * s, p[1] * s + oy];
+  function drawScene(ctx, def, prog, k, W, Hh, cam) {
+    const v = def.view || [0, VW], cx = (v[0] + v[1]) / 2, cy = def.cy || AY;
+    const s = W / (v[1] - v[0]) * cam.zoom, D = 420;
+    const cyw = Math.cos(cam.yaw), syw = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    const R = p => {                                                    // orbit camera: yaw around the vertical axis, then pitch
+      const x = p[0] - cx, y = p[1] - cy, z = p[2];
+      const x1 = x * cyw + z * syw, z1 = -x * syw + z * cyw;
+      const y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+      const f = D / (D - z2);
+      return [W / 2 + x1 * f * s, Hh / 2 + y2 * f * s, z2, f];
+    };
+    // floor grid under the knot, so the rotation is easy to read
+    ctx.lineWidth = 1;
+    for (let i = -6; i <= 6; i++) {
+      const g1 = R([cx + i * 20, cy + 55, -120]), g2 = R([cx + i * 20, cy + 55, 120]);
+      const h1 = R([cx - 120, cy + 55, i * 20]), h2 = R([cx + 120, cy + 55, i * 20]);
+      ctx.strokeStyle = i === 0 ? "rgba(46,196,182,.22)" : "rgba(255,255,255,.06)";
+      ctx.beginPath(); ctx.moveTo(g1[0], g1[1]); ctx.lineTo(g2[0], g2[1]); ctx.moveTo(h1[0], h1[1]); ctx.lineTo(h2[0], h2[1]); ctx.stroke();
+    }
     const segs = [];
     const push = (pts, color, w, upto, tf) => {
+      let pa = R(tf(pts[0], 0));
       for (let i = 1; i <= upto && i < pts.length; i++) {
-        const a = tf(pts[i - 1], i - 1), b = tf(pts[i], i);
-        segs.push({a, b, z: (a[2] + b[2]) / 2, color, w});
+        const pb = R(tf(pts[i], i));
+        segs.push({a: pa, b: pb, z: (pa[2] + pb[2]) / 2, color, w: w * (pa[3] + pb[3]) / 2});
+        pa = pb;
       }
     };
     const id = p => p;
@@ -199,21 +217,21 @@
       const f = Math.max(r.start, prog[ri]); let n = L.findIndex(v => v >= f * tot); if (n < 0) n = r.pts.length - 1;
       const tf = k > 0 ? ((p, i) => def.tight(p, k, ri, i)) : id;
       push(r.pts, r.color, r.w, n, tf);
-      if (prog._active === ri && f < 1) tip = tf(r.pts[n], n);
+      if (prog._active === ri && f < 1) tip = R(tf(r.pts[n], n));
     });
     segs.sort((u, v) => u.z - v.z);
     ctx.lineJoin = "round";
     for (const g of segs) {
-      const [ax, ay] = P(g.a), [bx, by] = P(g.b), w = g.w * s, depth = 0.82 + 0.03 * g.z;
+      const [ax, ay] = g.a, [bx, by] = g.b, w = g.w * s, depth = 0.8 + Math.max(-0.25, Math.min(0.3, g.z / 160));
       ctx.strokeStyle = "rgba(4,12,22,.9)"; ctx.lineWidth = w + 2.6 * s; ctx.lineCap = "butt";
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
       ctx.strokeStyle = shade(g.color, Math.min(1.15, depth)); ctx.lineWidth = w; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = Math.max(0.8, w * 0.25);
+      ctx.strokeStyle = "rgba(255,255,255,.32)"; ctx.lineWidth = Math.max(0.8, w * 0.25);
       ctx.beginPath(); ctx.moveTo(ax, ay - w * 0.22); ctx.lineTo(bx, by - w * 0.22); ctx.stroke();
     }
     if (tip) {
-      const [tx, ty] = P(tip), g = ctx.createRadialGradient(tx, ty, 0, tx, ty, 16 * s);
+      const [tx, ty] = tip, g = ctx.createRadialGradient(tx, ty, 0, tx, ty, 16 * s);
       g.addColorStop(0, "rgba(255,179,71,.95)"); g.addColorStop(1, "rgba(255,179,71,0)");
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(tx, ty, 16 * s, 0, 7); ctx.fill();
       ctx.fillStyle = "#ffb347"; ctx.beginPath(); ctx.arc(tx, ty, 3.2 * s, 0, 7); ctx.fill();
@@ -248,7 +266,10 @@
       <div class="k3cap"><span class="num">1</span><span class="tx"></span></div>
       <input type="range" dir="ltr" class="k3rng" min="0" max="1000" value="0" aria-label="تقدّم الربط">
       <div class="k3ctl"><button class="btn sm" data-k="play">⏸ إيقاف</button><button class="btn sec sm" data-k="slow">🐢 أبطأ</button>
-        <span class="k3steps">${def.steps.map((_, i) => `<i data-ks="${i}"></i>`).join("")}</span></div>`;
+        <button class="btn sec sm" data-k="prev" aria-label="الخطوة السابقة">⏪</button><button class="btn sec sm" data-k="next" aria-label="الخطوة التالية">⏩</button>
+        <span class="k3steps">${def.steps.map((_, i) => `<i data-ks="${i}"></i>`).join("")}</span></div>
+      <div class="k3view"><span class="mute">🖐️ اسحب على الرسم لتدويره، وقرّب بإصبعين</span>
+        <button class="btn sec sm" data-v="front">أمام</button><button class="btn sec sm" data-v="top">من أعلى</button><button class="btn sec sm" data-v="side">جانب</button><button class="btn sec sm" data-v="spin">🔄 دوران</button></div>`;
     const cv = box.querySelector("canvas"), rng = box.querySelector(".k3rng"), num = box.querySelector(".num"), tx = box.querySelector(".tx"), pb = box.querySelector('[data-k="play"]'), sb = box.querySelector('[data-k="slow"]');
     const dpr = Math.min(devicePixelRatio || 1, 2);
     let W = 0, Hh = 0;
@@ -256,14 +277,28 @@
     fit();
     let t = 0, playing = !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), speed = 1, last = performance.now(), lastStep = -1, raf = 0;
     const ctx = cv.getContext("2d");
+    const cam = {yaw: -0.35, pitch: 0.32, zoom: 1}, target = {yaw: -0.35, pitch: 0.32, zoom: 1};
+    let spin = false;
+    const VIEWS = {front: [0, 0], top: [0, 1.35], side: [-1.25, 0.15]};
+    // drag to orbit, two fingers to zoom, double-tap to reset
+    const ptrs = new Map(); let pinch0 = 0, zoom0 = 1, lastTap = 0;
+    cv.style.touchAction = "none";
+    cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); spin = false;
+      if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); zoom0 = target.zoom; }
+      const now = performance.now(); if (now - lastTap < 300) { Object.assign(target, {yaw: -0.35, pitch: 0.32, zoom: 1}); } lastTap = now; });
+    cv.addEventListener("pointermove", e => {
+      if (!ptrs.has(e.pointerId)) return; const pr = ptrs.get(e.pointerId); const dx = e.clientX - pr[0], dy = e.clientY - pr[1]; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+      if (ptrs.size === 1) { target.yaw += dx * 0.012; target.pitch = Math.max(-1.45, Math.min(1.45, target.pitch + dy * 0.01)); Object.assign(cam, {yaw: target.yaw, pitch: target.pitch}); }
+      else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; target.zoom = Math.max(0.6, Math.min(3, zoom0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / (pinch0 || 1))); cam.zoom = target.zoom; }
+    });
+    const up = e => ptrs.delete(e.pointerId); cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+    cv.addEventListener("wheel", e => { e.preventDefault(); target.zoom = Math.max(0.6, Math.min(3, target.zoom * (e.deltaY < 0 ? 1.1 : 0.9))); }, {passive: false});
     const draw = () => {
       const st = stateAt(def, TL, Math.min(t, TL.total - 0.8));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const g = ctx.createLinearGradient(0, 0, 0, Hh); g.addColorStop(0, "#0d2740"); g.addColorStop(1, "#081a2b");
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, Hh);
-      ctx.strokeStyle = "rgba(255,255,255,.035)"; ctx.lineWidth = 1;
-      for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, Hh); ctx.stroke(); }
-      drawScene(ctx, def, st.prog, st.k, W, Hh);
+      drawScene(ctx, def, st.prog, st.k, W, Hh, cam);
       if (st.stepI !== lastStep) { lastStep = st.stepI; num.textContent = st.stepI + 1; tx.textContent = st.cap; box.querySelectorAll("[data-ks]").forEach((d, i) => d.classList.toggle("on", i === st.stepI)); tx.parentNode.classList.remove("flash"); void tx.offsetWidth; tx.parentNode.classList.add("flash"); }
       rng.value = Math.round(t / TL.total * 1000);
     };
@@ -271,15 +306,24 @@
       if (!document.body.contains(box)) return;
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       if (playing) { t += dt * speed; if (t > TL.total) t = 0; }
+      if (spin) target.yaw += dt * 0.6;
+      cam.yaw += (target.yaw - cam.yaw) * 0.15; cam.pitch += (target.pitch - cam.pitch) * 0.15; cam.zoom += (target.zoom - cam.zoom) * 0.15;
       draw(); raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     rng.oninput = () => { t = rng.value / 1000 * TL.total; playing = false; pb.textContent = "▶ تشغيل"; draw(); };
     box.addEventListener("click", e => {
+      const vb = e.target.closest("[data-v]");
+      if (vb) { if (vb.dataset.v === "spin") { spin = !spin; vb.classList.toggle("on", spin); } else { spin = false; const [y, p2] = VIEWS[vb.dataset.v]; target.yaw = y; target.pitch = p2; target.zoom = 1; } return; }
       const b = e.target.closest("[data-k]"), d = e.target.closest("[data-ks]");
       if (d) { t = TL.segs[+d.dataset.ks].t0 + 0.01; draw(); return; }
       if (!b) return;
       if (b.dataset.k === "play") { playing = !playing; if (playing && t >= TL.total - 0.9) t = 0; pb.textContent = playing ? "⏸ إيقاف" : "▶ تشغيل"; }
+      if (b.dataset.k === "prev" || b.dataset.k === "next") {
+        const cur = TL.segs.findIndex(sg => t < sg.t1 + PAUSE); let i = cur < 0 ? TL.segs.length - 1 : cur;
+        i = b.dataset.k === "next" ? Math.min(TL.segs.length - 1, (t > TL.segs[i].t0 + 0.05 ? i + 1 : i)) : Math.max(0, t - TL.segs[i].t0 > 0.6 ? i : i - 1);
+        t = TL.segs[i].t0 + 0.01; playing = false; pb.textContent = "▶ تشغيل"; draw(); return;
+      }
       if (b.dataset.k === "slow") { speed = speed === 1 ? 0.5 : 1; sb.textContent = speed === 1 ? "🐢 أبطأ" : "🐇 عادي"; }
     });
     window.addEventListener("resize", fit);
