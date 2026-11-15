@@ -200,7 +200,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.2</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.3</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -365,7 +365,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 3.2 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.3 — Specter Angler BH</p>
     <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
   </div>
 </section>
@@ -564,6 +564,7 @@ function factorsAt(rows, i, lat, lng){
   // Pressure trend (3h)
   const p3 = (rows[i-3] && r.p!=null && rows[i-3].p!=null) ? r.p - rows[i-3].p : 0;
   f.press = (p3<=-0.5 && p3>=-2.5) ? 1 : p3<-2.5 ? 0.5 : p3>1 ? 0.4 : 0.65;
+  r.p3 = (rows[i-3] && r.p!=null && rows[i-3].p!=null) ? p3 : null;
   if(p3<=-0.5 && p3>=-2.5) why.push(["+","الضغط ينخفض تدريجياً: نشاط أعلى"]);
   if(p3>1) why.push(["-","الضغط يرتفع بسرعة"]);
   // Moon
@@ -1030,12 +1031,13 @@ async function openSpot(s){
 function factorChips(x){
   const r = x.row;
   const items = [
-    ["حركة الماء", (r.tideState||"—") + (r.tideKm>3 ? ` (من نقطة بحرية على بعد ${Math.round(r.tideKm)} كم)` : "")],
+    ["حركة الماء", (r.tideState||"—") + (r.tideSrc!=="harm" && r.tideKm>3 ? ` (من نقطة بحرية على بعد ${Math.round(r.tideKm)} كم)` : "")],
     ["الريح", r.wind!=null? Math.round(r.wind)+" كم/س":"—"],
     ["الموج", r.wave!=null? r.wave.toFixed(1)+" م":"—"],
     ["حرارة الماء", r.sst!=null? Math.round(r.sst)+"°م":"—"],
     ["القمر", moonName(x.moon)],
-    ["الغيوم", r.cloud!=null? r.cloud+"٪":"—"]
+    ["الغيوم", r.cloud!=null? r.cloud+"٪":"—"],
+    ["الضغط", r.p!=null ? `${Math.round(r.p)} هـ.ب ${r.p3==null?"":r.p3<=-2.5?"⏬ ينخفض بسرعة":r.p3<=-0.5?"⬇️ ينخفض: نشاط متوقع":r.p3>1?"⬆️ يرتفع: نشاط أقل":"➖ ثابت"}` : "—"]
   ];
   return `<div>${items.map(i=>`<span class="chip">${i[0]}: ${i[1]}</span>`).join("")}</div>
     <div style="margin-top:6px">${x.why.map(w=>`<span class="chip ${w[0]==="+"?"ok":"warn"}">${w[0]==="+"?"▲":"▼"} ${w[1]}</span>`).join("")}</div>`;
@@ -1685,7 +1687,7 @@ renderAll();
 loadConditions();
 setInterval(loadConditions, 30*60*1000);
 /* ---------------- Update check (works for the website and the Android app) ---------------- */
-const APP_VER = "3.2";
+const APP_VER = "3.3";
 const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 async function checkUpdate(manual){
   try{
