@@ -130,7 +130,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.5</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v2.6</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -277,11 +277,12 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   <div class="card">
     <h2>كيف يعمل التطبيق؟</h2>
     <p>يجمع <b>مؤشر الصيد</b> سبعة عوامل لكل ساعة: حركة المدّ والجزر، والإضاءة، والريح، والموج، واتجاه الضغط الجوي، وطور القمر، وحرارة الماء. البيانات حيّة من خدمة Open-Meteo المجانية، وتُحسب حركة الشمس والقمر داخل التطبيق.</p>
+    <p>أوقات المدّ والجزر في البحرين تُحسب داخل التطبيق من ثوابت محطة ميناء سلمان في قاعدة بيانات <b>TICON-4</b> (Hart-Davis وDettmering وSeitz، 2025، SEANOE، رخصة CC BY 4.0)، بمكتبة neaps المفتوحة. وهي تقديرية وليست للملاحة.</p>
     <p><b>النقاط المرشّحة</b> تُستخرج من خرائط OpenStreetMap: كاسرات الأمواج، والحواجز، والأرصفة البحرية، والشعاب، ورؤوس اليابسة. ثم تُستبعد النقاط الواقعة داخل مناطق عسكرية أو موانئ أو مطارات أو محميات مرسومة في الخريطة.</p>
     <div class="banner">الترشيح احتمال لا ضمان. خرائط المناطق المحظورة ليست كاملة، فتأكّد دائماً على الأرض من اللوحات والأنظمة قبل الدخول إلى أي موقع.</div>
     <p class="mute">كل بياناتك محفوظة على جهازك فقط. خذ نسخة احتياطية من السجلّ بين حين وآخر، وستنتقل إلى حسابك عند إطلاق الإصدار الثاني.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 2.5 — Specter Angler BH</p>
+    <p class="mute">الإصدار 2.6 — Specter Angler BH</p>
   </div>
 </section>
 
@@ -300,6 +301,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="tide.js?v=2.6"></script>
 <script src="visuals.js?v=2.5"></script>
 <script src="gear.js?v=2.5"></script>
 <script>
@@ -414,8 +416,34 @@ async function fetchConditions(lat, lng){
       tideKm: srcKm.sea_level_height_msl
     });
   }
+  // Bahrain coast: replace the coarse ocean-model tide with the Mina Salman tide-gauge harmonics
+  if(window.HTIDE && HTIDE.available(lat,lng)){
+    const off = tideCalOffset(lat,lng), km = kmBetween(here, HTIDE.station);
+    rows.forEach(r=>{ r.sl = HTIDE.level(r.t, off); r.tideSrc="harm"; r.tideOff=off; r.tideKm=km; });
+  }
   return rows;
 }
+
+/* ---------------- Tide calibration (per spot, from the angler's own observations) ---------------- */
+function tideCals(){ return store.get("tidecal", []); }
+function tideCalAt(lat,lng){ return tideCals().find(c=>kmBetween({lat,lng},c) < 1.5) || null; }
+function tideCalOffset(lat,lng){ const c=tideCalAt(lat,lng); if(!c||!c.offs.length) return 0; return Math.round(c.offs.reduce((a,b)=>a+b,0)/c.offs.length); }
+function calibrateTide(sp, type){
+  if(!window.HTIDE || !HTIDE.available(sp.lat,sp.lng)) return toast("المعايرة متاحة لسواحل البحرين فقط");
+  const now = Date.now();
+  const ev = HTIDE.extremes(now-5*36e5, now+5*36e5, 0).filter(e=>e.type===type)
+    .sort((a,b)=>Math.abs(a.t-now)-Math.abs(b.t-now))[0];
+  if(!ev) return toast("لم أجد ذروة قريبة من الآن");
+  const delta = Math.round((now - ev.t)/6e4);
+  if(Math.abs(delta) > 240) return toast("الفرق أكبر من 4 ساعات، تأكّد من ملاحظتك");
+  const all = tideCals(); let c = all.find(x=>kmBetween({lat:sp.lat,lng:sp.lng},x) < 1.5);
+  if(!c){ c = {lat:sp.lat, lng:sp.lng, name:sp.name, offs:[]}; all.push(c); }
+  c.offs.push(delta); c.offs = c.offs.slice(-6); store.set("tidecal", all);
+  const avg = tideCalOffset(sp.lat, sp.lng);
+  toast(`سُجّلت ملاحظتك ✓ تصحيح هذه النقطة الآن: ${avg>=0?"+":""}${avg} دقيقة (${c.offs.length} ملاحظة)`);
+  openSpot(sp);
+}
+function resetTideCal(sp){ store.set("tidecal", tideCals().filter(x=>kmBetween({lat:sp.lat,lng:sp.lng},x) >= 1.5)); toast("حُذفت معايرة هذه النقطة"); openSpot(sp); }
 
 /* =========================================================
    Scoring
@@ -583,6 +611,9 @@ function renderLastCatch(){
 
 /* ---------------- Tide table (highs / lows) ---------------- */
 function tideEvents(rows){
+  if(rows[0] && rows[0].tideSrc==="harm" && window.HTIDE){
+    const now=Date.now(); return HTIDE.extremes(now-14*36e5, now+60*36e5, rows[0].tideOff||0);
+  }
   const ev = [];
   for(let i=1;i<rows.length-1;i++){
     const a=rows[i-1].sl, b=rows[i].sl, c=rows[i+1].sl;
@@ -599,7 +630,8 @@ function tideEvents(rows){
 }
 function tideChart(rows, evs){
   const now=Date.now(), t0=now-2*36e5, t1=now+34*36e5;
-  const pts=rows.filter(r=>r.sl!=null && r.t>=t0-36e5 && r.t<=t1+36e5);
+  let pts=rows.filter(r=>r.sl!=null && r.t>=t0-36e5 && r.t<=t1+36e5);
+  if(rows[0] && rows[0].tideSrc==="harm" && window.HTIDE){ pts=[]; for(let t=t0;t<=t1;t+=15*6e4) pts.push({t:new Date(t), sl:HTIDE.level(t, rows[0].tideOff||0)}); }
   if(pts.length<6) return "";
   const W=340,H=120,pl=8,pr=8,pt=18,pb=22;
   const lo=Math.min(...pts.map(r=>r.sl)), hi=Math.max(...pts.map(r=>r.sl)), span=(hi-lo)||1;
@@ -630,7 +662,9 @@ function tideHtml(rows, compact){
     <table class="t" style="margin-top:8px">${next.map(e=>`<tr><td>${e.type==="high"?"🔵 أعلى مدّ":"🟠 أدنى جزر"}</td><td>${day(e.t)}</td><td style="font-weight:800">${fmtH(e.t)}</td><td class="mute">${e.h>=0?"+":""}${e.h.toFixed(2)} م</td></tr>`).join("")}</table>
     ${compact?"":tideChart(rows, evs)}
     ${!compact && lowNext?`<div class="mute" style="margin-top:6px">🟩 المناطق الخضراء: أول ساعتين بعد أدنى جزر، حين يبدأ الماء بالارتفاع. غالباً هي أفضل وقت لصيد الشاطئ. القادمة تبدأ ${day(lowNext.t)} ${fmtH(lowNext.t)}.</div>`:""}
-    <div class="mute" style="font-size:11px;margin-top:6px">تقديري من نموذج محيطي${km>3?` (أقرب نقطة بحرية على بعد ${Math.round(km)} كم)`:""}، وليس للملاحة. قد يختلف التوقيت ساعة تقريباً عن شاطئك.</div>`;
+    ${rows[0].tideSrc==="harm"
+      ? `<div class="mute" style="font-size:11px;margin-top:6px">محسوب من ثوابت محطة قياس المدّ في ميناء سلمان (TICON-4، رصد 29 سنة)${rows[0].tideOff?` · <b style="color:var(--acc2)">مصحّح بمعايرتك ${rows[0].tideOff>0?"+":""}${rows[0].tideOff} دقيقة</b>`:""}. الارتفاع منسوب إلى متوسط سطح البحر.${compact&&km>12&&!rows[0].tideOff?` النقطة على بعد ${Math.round(km)} كم من المحطة، وقد يتقدم التوقيت أو يتأخر، خصوصاً في الساحل الغربي وخليج سلوى، فعايِرها من بطاقتها.`:""} ليس للملاحة.</div>`
+      : `<div class="mute" style="font-size:11px;margin-top:6px">تقديري من نموذج محيطي${km>3?` (أقرب نقطة بحرية على بعد ${Math.round(km)} كم)`:""}، وليس للملاحة. قد يختلف التوقيت ساعة تقريباً عن شاطئك.</div>`}`;
 }
 
 /* ---------------- Nearest best spots ---------------- */
@@ -895,13 +929,17 @@ async function openSpot(s){
     ${s.mine ? (s.eval ? evalHtml(s) : `<div class="banner">هذه نقطتك ولم تُقيَّم بعد. <button class="btn sm" data-reeval="${s.id}">قيّمها الآن</button></div>`) : ""}
     ${!s.mine && reasons.length?`<h3>لماذا رُشّحت؟</h3><ul>${reasons.map(r=>`<li>${r}</li>`).join("")}</ul>`:""}
     ${cur?factorChips(cur):""}
-    ${tideHtml(spotRows, true) ? `<div class="kstepbox">${tideHtml(spotRows, true).replace('<h2 style="margin-bottom:4px">','<h3 style="margin:0 0 4px">').replace('</h2>','</h3>')}</div>` : ""}
+    ${tideHtml(spotRows, true) ? `<div class="kstepbox">${tideHtml(spotRows, true).replace('<h2 style="margin-bottom:4px">','<h3 style="margin:0 0 4px">').replace('</h2>','</h3>')}
+      ${window.HTIDE && HTIDE.available(s.lat,s.lng) ? `<div class="mute" style="margin-top:8px">أنت هنا الآن؟ إذا رأيت الماء توقّف عند أدنى نقطة أو أعلى نقطة، اضغط الزر المناسب ليتعلم التطبيق توقيت هذه النقطة بالذات.</div>
+      <div class="row" style="margin-top:6px"><button class="btn sec sm" id="calLow">🟠 الماء الآن في أدنى جزر</button><button class="btn sec sm" id="calHigh">🔵 الماء الآن في أعلى مدّ</button>${tideCalAt(s.lat,s.lng)?`<button class="btn sec sm" id="calReset">مسح المعايرة</button>`:""}</div>` : ""}</div>` : ""}
     ${rig?`<h3>التجهيزة المقترحة الآن</h3>${rigHtml(rig,true)}`:""}
     <div class="row" style="margin-top:12px">
       ${navBtn(s.lat,s.lng)}
       <button class="btn sec sm" data-renamespot="${s.id}">✏️ تعديل الاسم</button>
       ${s.mine?`<button class="btn sec sm" id="delSpot">حذف النقطة</button>`:""}
     </div>`;
+  const cl=$("#calLow"), ch=$("#calHigh"), cr=$("#calReset");
+  if(cl) cl.onclick=()=>calibrateTide(s,"low"); if(ch) ch.onclick=()=>calibrateTide(s,"high"); if(cr) cr.onclick=()=>resetTideCal(s);
   const d = $("#delSpot"); if(d) d.onclick = ()=>{ mySpots = mySpots.filter(x=>x.id!==s.id); store.set("myspots",mySpots); closeModal(); renderSpots(); fillLogSpots(); };
 }
 function factorChips(x){
