@@ -217,7 +217,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
   </svg>
   <div>
     <h1>Specter Angler BH</h1>
-    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.7</small>
+    <small>الصَّيَّادُ الشَّبَح — البحرين · v3.9</small>
   </div>
   <label class="beg">وضع المبتدئ
     <span class="switch"><input type="checkbox" id="begToggle" checked><span></span></span>
@@ -382,7 +382,7 @@ table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 4px;text-a
     </ul>
     <p class="mute">وفي الإصدار الثالث: محادثة مباشرة بين الصيادين لمن يفعّلها.</p>
     <button class="btn sec sm" onclick="startTour()">▶ إعادة الجولة التعريفية</button>
-    <p class="mute">الإصدار 3.7 — Specter Angler BH</p>
+    <p class="mute">الإصدار 3.9 — Specter Angler BH</p>
     <button class="btn sec sm" onclick="checkUpdate(true)">🔄 تحقّق من وجود تحديث</button>
   </div>
 </section>
@@ -1707,8 +1707,11 @@ fillLogSpots(); fillLogFish();
 renderAll();
 loadConditions();
 setInterval(loadConditions, 30*60*1000);
+// free the space used by the removed photo galleries (v3.8)
+try{ if(window.caches) caches.delete("sab-gallery-v1"); Object.keys(localStorage).filter(k=>k.startsWith("sab_gal_")).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+
 /* ---------------- Update check (works for the website and the Android app) ---------------- */
-const APP_VER = "3.7";
+const APP_VER = "3.9";
 const verGt = (a,b)=>{ const x=a.split(".").map(Number), y=b.split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 async function checkUpdate(manual){
   try{
